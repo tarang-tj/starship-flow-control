@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "name": "Baseline readiness plan",
+    "as_of": "Synthetic Day 0",
+    "horizon_days": 21,
+    "target_builds": 4,
+    "disclaimer": "Synthetic demonstration data. Not SpaceX operational data."
+  },
+  "summary": {
+    "target_builds": 4,
+    "ready_builds": 3,
+    "build_gap": 1,
+    "constraints": 1,
+    "at_risk_value": 960000,
+    "horizon_days": 21
+  },
+  "root": {
+    "id": "VEHICLE",
+    "name": "Integrated vehicle",
+    "category": "Integration",
+    "on_hand": 0,
+    "lead_time_days": 0,
+    "unit_cost": 0,
+    "inbound_in_horizon": 0,
+    "late_inbound": 0,
+    "usable_in_horizon": 0,
+    "available_builds": 3,
+    "constraint_path": [
+      "VEHICLE",
+      "HEAT-SHIELD",
+      "TPS-TILE"
+    ],
+    "supply_confidence": 0.86
+  },
+  "parts": [
+    {
+      "id": "ENGINE",
+      "name": "Engine assembly",
+      "category": "Propulsion",
+      "on_hand": 25,
+      "lead_time_days": 28,
+      "unit_cost": 940000,
+      "inbound_in_horizon": 0,
+      "late_inbound": 0,
+      "usable_in_horizon": 25,
+      "available_builds": 25,
+      "constraint_path": [
+        "ENGINE"
+      ],
+      "supply_confidence": 1.0
+    },
+    {
+      "id": "METHANE-VALVE",
+      "name": "Cryogenic methane valve",
+      "category": "Propulsion",
+      "on_hand": 68,
+      "lead_time_days": 31,
+      "unit_cost": 12800,
+      "inbound_in_horizon": 24,
+      "late_inbound": 0,
+      "usable_in_horizon": 92,
+      "available_builds": 92,
+      "constraint_path": [
+        "METHANE-VALVE"
+      ],
+      "supply_confidence": 0.86
+    },
+    {
+      "id": "PROP-MODULE",
+      "name": "Propulsion module",
+      "category": "Propulsion",
+      "on_hand": 0,
+      "lead_time_days": 0,
+      "unit_cost": 0,
+      "inbound_in_horizon": 0,
+      "late_inbound": 0,
+      "usable_in_horizon": 0,
+      "available_builds": 4,
+      "constraint_path": [
+        "PROP-MODULE",
+        "ENGINE"
+      ],
+      "supply_confidence": 0.86
+    },
+    {
+      "id": "TPS-TILE",
+      "name": "Thermal protection tile",
+      "category": "Structures",
+      "on_hand": 12800,
+      "lead_time_days": 42,
+      "unit_cost": 240,
+      "inbound_in_horizon": 0,
+      "late_inbound": 5200,
+      "usable_in_horizon": 12800,
+      "available_builds": 12800,
+      "constraint_path": [
+        "TPS-TILE"
+      ],
+      "supply_confidence": 1.0
+    },
+    {
+      "id": "HEAT-SHIELD",
+      "name": "Thermal protection set",
+      "category": "Structures",
+      "on_hand": 0,
+      "lead_time_days": 0,
+      "unit_cost": 0,
+      "inbound_in_horizon": 0,
+      "late_inbound": 0,
+      "usable_in_horizon": 0,
+      "available_builds": 3,
+      "constraint_path": [
+        "HEAT-SHIELD",
+        "TPS-TILE"
+      ],
+      "supply_confidence": 1.0
+    },
+    {
+      "id": "FLIGHT-COMP",
+      "name": "Flight computer",
+      "category": "Avionics",
+      "on_hand": 7,
+      "lead_time_days": 24,
+      "unit_cost": 47000,
+      "inbound_in_horizon": 4,
+      "late_inbound": 0,
+      "usable_in_horizon": 11,
+      "available_builds": 11,
+      "constraint_path": [
+        "FLIGHT-COMP"
+      ],
+      "supply_confidence": 0.91
+    },
+    {
+      "id": "AVIONICS",
+      "name": "Avionics package",
+      "category": "Avionics",
+      "on_hand": 3,
+      "lead_time_days": 16,
+      "unit_cost": 185000,
+      "inbound_in_horizon": 0,
+      "late_inbound": 1,
+      "usable_in_horizon": 3,
+      "available_builds": 5,
+      "constraint_path": [
+        "AVIONICS",
+        "FLIGHT-COMP"
+      ],
+      "supply_confidence": 0.91
+    },
+    {
+      "id": "VEHICLE",
+      "name": "Integrated vehicle",
+      "category": "Integration",
+      "on_hand": 0,
+      "lead_time_days": 0,
+      "unit_cost": 0,
+      "inbound_in_horizon": 0,
+      "late_inbound": 0,
+      "usable_in_horizon": 0,
+      "available_builds": 3,
+      "constraint_path": [
+        "VEHICLE",
+        "HEAT-SHIELD",
+        "TPS-TILE"
+      ],
+      "supply_confidence": 0.86
+    }
+  ],
+  "parts_by_id": {
+    "ENGINE": {
+      "id": "ENGINE",
+      "name": "Engine assembly",
+      "category": "Propulsion",
+      "on_hand": 25,
+      "lead_time_days": 28,
+      "unit_cost": 940000,
+      "inbound_in_horizon": 0,
+      "late_inbound": 0,
+      "usable_in_horizon": 25,
+      "available_builds": 25,
+      "constraint_path": [
+        "ENGINE"
+      ],
+      "supply_confidence": 1.0
+    },
+    "METHANE-VALVE": {
+      "id": "METHANE-VALVE",
+      "name": "Cryogenic methane valve",
+      "category": "Propulsion",
+      "on_hand": 68,
+      "lead_time_days": 31,
+      "unit_cost": 12800,
+      "inbound_in_horizon": 24,
+      "late_inbound": 0,
+      "usable_in_horizon": 92,
+      "available_builds": 92,
+      "constraint_path": [
+        "METHANE-VALVE"
+      ],
+      "supply_confidence": 0.86
+    },
+    "PROP-MODULE": {
+      "id": "PROP-MODULE",
+      "name": "Propulsion module",
+      "category": "Propulsion",
+      "on_hand": 0,
+      "lead_time_days": 0,
+      "unit_cost": 0,
+      "inbound_in_horizon": 0,
+      "late_inbound": 0,
+      "usable_in_horizon": 0,
+      "available_builds": 4,
+      "constraint_path": [
+        "PROP-MODULE",
+        "ENGINE"
+      ],
+      "supply_confidence": 0.86
+    },
+    "TPS-TILE": {
+      "id": "TPS-TILE",
+      "name": "Thermal protection tile",
+      "category": "Structures",
+      "on_hand": 12800,
+      "lead_time_days": 42,
+      "unit_cost": 240,
+      "inbound_in_horizon": 0,
+      "late_inbound": 5200,
+      "usable_in_horizon": 12800,
+      "available_builds": 12800,
+      "constraint_path": [
+        "TPS-TILE"
+      ],
+      "supply_confidence": 1.0
+    },
+    "HEAT-SHIELD": {
+      "id": "HEAT-SHIELD",
+      "name": "Thermal protection set",
+      "category": "Structures",
+      "on_hand": 0,
+      "lead_time_days": 0,
+      "unit_cost": 0,
+      "inbound_in_horizon": 0,
+      "late_inbound": 0,
+      "usable_in_horizon": 0,
+      "available_builds": 3,
+      "constraint_path": [
+        "HEAT-SHIELD",
+        "TPS-TILE"
+      ],
+      "supply_confidence": 1.0
+    },
+    "FLIGHT-COMP": {
+      "id": "FLIGHT-COMP",
+      "name": "Flight computer",
+      "category": "Avionics",
+      "on_hand": 7,
+      "lead_time_days": 24,
+      "unit_cost": 47000,
+      "inbound_in_horizon": 4,
+      "late_inbound": 0,
+      "usable_in_horizon": 11,
+      "available_builds": 11,
+      "constraint_path": [
+        "FLIGHT-COMP"
+      ],
+      "supply_confidence": 0.91
+    },
+    "AVIONICS": {
+      "id": "AVIONICS",
+      "name": "Avionics package",
+      "category": "Avionics",
+      "on_hand": 3,
+      "lead_time_days": 16,
+      "unit_cost": 185000,
+      "inbound_in_horizon": 0,
+      "late_inbound": 1,
+      "usable_in_horizon": 3,
+      "available_builds": 5,
+      "constraint_path": [
+        "AVIONICS",
+        "FLIGHT-COMP"
+      ],
+      "supply_confidence": 0.91
+    },
+    "VEHICLE": {
+      "id": "VEHICLE",
+      "name": "Integrated vehicle",
+      "category": "Integration",
+      "on_hand": 0,
+      "lead_time_days": 0,
+      "unit_cost": 0,
+      "inbound_in_horizon": 0,
+      "late_inbound": 0,
+      "usable_in_horizon": 0,
+      "available_builds": 3,
+      "constraint_path": [
+        "VEHICLE",
+        "HEAT-SHIELD",
+        "TPS-TILE"
+      ],
+      "supply_confidence": 0.86
+    }
+  },
+  "constraints": [
+    {
+      "id": "TPS-TILE",
+      "name": "Thermal protection tile",
+      "category": "Structures",
+      "on_hand": 12800,
+      "lead_time_days": 42,
+      "unit_cost": 240,
+      "inbound_in_horizon": 0,
+      "late_inbound": 5200,
+      "usable_in_horizon": 12800,
+      "available_builds": 12800,
+      "constraint_path": [
+        "TPS-TILE"
+      ],
+      "supply_confidence": 1.0,
+      "required_for_target": 16800,
+      "shortage_units": 4000,
+      "build_gap": 1,
+      "risk_score": 100.0,
+      "recovery_action": "Evaluate expediting 4,000 units inside day 21."
+    }
+  ],
+  "purchase_orders": [
+    {
+      "id": "PO-1042",
+      "part_id": "METHANE-VALVE",
+      "qty": 24,
+      "arrival_day": 12,
+      "confidence": 0.86
+    },
+    {
+      "id": "PO-1088",
+      "part_id": "TPS-TILE",
+      "qty": 5200,
+      "arrival_day": 34,
+      "confidence": 0.72
+    },
+    {
+      "id": "PO-1091",
+      "part_id": "FLIGHT-COMP",
+      "qty": 4,
+      "arrival_day": 17,
+      "confidence": 0.91
+    },
+    {
+      "id": "PO-1103",
+      "part_id": "AVIONICS",
+      "qty": 1,
+      "arrival_day": 26,
+      "confidence": 0.8
+    }
+  ],
+  "assumptions": [
+    "All quantities, suppliers, lead times, costs, and build structure are synthetic.",
+    "An inbound order counts only when its scheduled arrival is inside the planning horizon.",
+    "No yield loss, substitutions, capacity constraints, or partial assembly credit are modeled.",
+    "Risk score is a transparent prioritization heuristic, not a probability of failure."
+  ]
+}

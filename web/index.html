@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="A synthetic multi-level BOM constraint and scenario-planning demonstration.">
+  <title>Flow Control — Synthetic Build Readiness</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to operations view</a>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="identity">
+      <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <div><strong>FLOW CONTROL</strong><small>BUILD READINESS / SYNTHETIC DEMO</small></div>
+    </div>
+    <div class="top-actions">
+      <span class="status"><i></i> MODEL ONLINE</span>
+      <button id="aboutBtn" class="text-button" type="button">METHOD</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="mission-strip" aria-labelledby="mission-title">
+      <div>
+        <p class="eyebrow">DECISION WINDOW / <span id="horizonLabel">21 DAYS</span></p>
+        <h1 id="mission-title">Find the constraint before<br>the build finds it.</h1>
+        <p class="lede">A deterministic multi-level BOM engine turns inventory, inbound orders, and lead times into one question: <em>what actually limits the plan?</em></p>
+      </div>
+      <div class="scenario-controls" aria-label="Scenario controls">
+        <div class="control-heading"><span>SCENARIO LAB</span><b id="scenarioState">BASELINE</b></div>
+        <label for="tileArrival">Thermal tile arrival day <output id="tileDayOut">34</output></label>
+        <input id="tileArrival" type="range" min="7" max="45" value="34" step="1">
+        <label for="engineStock">Engine assemblies on hand <output id="engineOut">25</output></label>
+        <input id="engineStock" type="range" min="12" max="30" value="25" step="1">
+        <div class="button-row">
+          <button id="runBtn" class="primary" type="button">RUN SCENARIO</button>
+          <button id="resetBtn" class="secondary" type="button">RESET</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="metrics" aria-label="Readiness summary">
+      <article><span>READY / TARGET</span><strong><b id="readyBuilds">—</b><small> / <span id="targetBuilds">—</span></small></strong><p id="readinessNote">Loading deterministic model…</p></article>
+      <article><span>BUILD GAP</span><strong id="buildGap">—</strong><p>vehicles inside horizon</p></article>
+      <article><span>ACTIVE CONSTRAINTS</span><strong id="constraintCount">—</strong><p>leaf-level shortages</p></article>
+      <article><span>SHORTAGE VALUE</span><strong id="riskValue">—</strong><p>synthetic unit cost</p></article>
+    </section>
+
+    <section class="workspace">
+      <div class="panel constraint-panel">
+        <header><div><p class="eyebrow">01 / EXCEPTION QUEUE</p><h2>Constraint radar</h2></div><span class="live-label">RANKED BY IMPACT</span></header>
+        <p class="score-key">PRIORITY SCORE / BUILD GAP + TIMING + LEAD-TIME EXPOSURE</p>
+        <div id="constraintList" class="constraint-list" aria-live="polite"></div>
+      </div>
+
+      <div class="panel path-panel">
+        <header><div><p class="eyebrow">02 / PROPAGATION</p><h2>Critical path</h2></div><span id="pathBadge" class="live-label">—</span></header>
+        <div id="criticalPath" class="critical-path"></div>
+        <div class="logic-note">
+          <span>ENGINE LOGIC</span>
+          <p>For each assembly, available builds equal the minimum child availability divided by quantity-per-parent. Constraints propagate upward; no model-generated guess overrides the arithmetic.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel orders-panel">
+      <header><div><p class="eyebrow">03 / RECOVERY TIMING</p><h2>Inbound order board</h2></div><span class="live-label">HORIZON-AWARE</span></header>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ORDER</th><th>COMPONENT</th><th>QTY</th><th>ARRIVAL</th><th>CONFIDENCE</th><th>PLAN STATUS</th></tr></thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="integrity-bar">
+      <div><p class="eyebrow">MODEL INTEGRITY</p><h2>Built to fail loudly.</h2></div>
+      <ul>
+        <li><b>6</b> deterministic tests</li>
+        <li><b>0</b> hidden optimizers</li>
+        <li><b>4</b> explicit assumptions</li>
+        <li><b>100%</b> synthetic inputs</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>INDEPENDENT PORTFOLIO DEMONSTRATION.</strong> Not affiliated with or endorsed by SpaceX. All quantities, components, costs, suppliers, lead times, and build structures are synthetic.</p>
+    <p>Built by TJ Jammalamadaka · Python · deterministic BOM propagation · scenario analysis</p>
+  </footer>
+
+  <dialog id="methodDialog">
+    <button class="dialog-close" type="button" aria-label="Close method dialog">×</button>
+    <p class="eyebrow">MODEL CARD</p>
+    <h2>What this proves—and what it does not.</h2>
+    <div class="dialog-grid">
+      <section><h3>Inputs</h3><p>Multi-level bill of materials, on-hand inventory, inbound order dates, confidence, target builds, and planning horizon.</p></section>
+      <section><h3>Decision</h3><p>Surface leaf shortages, propagate the limiting path, rank recovery work, and compare scenarios without mutating the baseline.</p></section>
+      <section><h3>Boundaries</h3><p>No yield loss, supplier capacity, substitutions, partial assemblies, or production routing. Risk score prioritizes; it does not predict failure.</p></section>
+      <section><h3>Why deterministic</h3><p>Inventory arithmetic is consequential. Explainable constraints and fault-tested validation matter more here than generative output.</p></section>
+    </div>
+  </dialog>
+  <script src="app.js"></script>
+</body>
+</html>
