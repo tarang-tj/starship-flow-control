@@ -888,7 +888,10 @@ function unavailableController(error, onError) {
   return {
     update() {}, invalidate() {}, selectNode() { return false; }, focusNext() { return false; },
     setExploded() { return false; }, setExplodeAmount() { return 0; }, dispose() {},
-    getState: () => ({ available: false, error, model: null, selectedId: null, reducedMotion: false, pixelRatio: 1, exploded: false }),
+    getState: () => ({
+      available: false, error, model: null, selectedId: null, reducedMotion: false, pixelRatio: 1,
+      exploded: false, explodeAmount: 0, explodeTarget: 0, renderer: null,
+    }),
   };
 }
 
@@ -901,6 +904,10 @@ const EXPLODE_MAX_FRAMES = 240;
 export function createDigitalThread(canvas, options = {}) {
   const onSelect = options.onSelect || (() => {});
   const onError = options.onError || (() => {});
+  // Fires whenever the layout the renderer actually holds changes, from any
+  // source: the methods below, the keyboard, or a pointer pick. The shell reads
+  // renderer state through this rather than mirroring its own copy.
+  const onLayoutChange = options.onLayoutChange || (() => {});
   if (!canvas || typeof canvas.getContext !== "function") {
     return unavailableController(new Error("A canvas element is required"), onError);
   }
@@ -951,6 +958,26 @@ export function createDigitalThread(canvas, options = {}) {
   canvas.setAttribute?.("role", "application");
   canvas.setAttribute?.("aria-label", "Interactive vehicle digital thread. Use arrow keys to move between subsystems and Enter to inspect.");
 
+  // The renderer owns explode target and selection; every mutation funnels
+  // through here so no caller can report a layout the renderer is not holding.
+  // `explodeAmount` is the requested separation (the target), not the eased
+  // in-flight value: subscribers track intent, `getState().explodeAmount`
+  // reports where the animation currently is.
+  let lastLayout = null;
+  function notifyLayout() {
+    const next = { exploded, explodeAmount: explodeTarget, selectedId };
+    if (lastLayout
+      && lastLayout.exploded === next.exploded
+      && lastLayout.explodeAmount === next.explodeAmount
+      && lastLayout.selectedId === next.selectedId) return;
+    lastLayout = next;
+    try {
+      onLayoutChange({ ...next });
+    } catch (error) {
+      onError(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
   function invalidate() {
     if (!disposed && frame === null) frame = requestFrame(render);
   }
@@ -991,6 +1018,7 @@ export function createDigitalThread(canvas, options = {}) {
     if (!node) return false;
     selectedId = id;
     onSelect({ ...node.detail });
+    notifyLayout();
     invalidate();
     return true;
   }
@@ -1006,16 +1034,18 @@ export function createDigitalThread(canvas, options = {}) {
   // that happens to match the current boolean state.
   function applyExplode(target, flag) {
     exploded = flag;
-    if (target === explodeTarget) return exploded;
-    explodeTarget = target;
-    if (reducedMotion) {
-      explode = target;
-    } else {
-      explodeFrom = explode;
-      explodeStart = now();
-      explodeFrames = 0;
+    if (target !== explodeTarget) {
+      explodeTarget = target;
+      if (reducedMotion) {
+        explode = target;
+      } else {
+        explodeFrom = explode;
+        explodeStart = now();
+        explodeFrames = 0;
+      }
+      invalidate();
     }
-    invalidate();
+    notifyLayout();
     return exploded;
   }
 
@@ -1097,6 +1127,7 @@ export function createDigitalThread(canvas, options = {}) {
       model = buildThreadModel(result);
       selectedId = model.constraintPath.at(-1);
       if (config.exploded !== undefined) setExploded(config.exploded);
+      notifyLayout();
       invalidate();
     },
     invalidate,
@@ -1106,7 +1137,7 @@ export function createDigitalThread(canvas, options = {}) {
     setExplodeAmount,
     getState: () => ({
       available: true, model, selectedId, hoveredId, reducedMotion, pixelRatio,
-      exploded, explodeAmount: explode, renderer: renderer.kind,
+      exploded, explodeAmount: explode, explodeTarget, renderer: renderer.kind,
     }),
     dispose() {
       disposed = true;

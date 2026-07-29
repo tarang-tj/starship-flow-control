@@ -82,6 +82,7 @@ test("canvas controller exposes integration API, selection callbacks, invalidati
   controller.selectNode("ENGINE");
   assert.equal(calls.selected.at(-1).id, "ENGINE");
   assert.equal(controller.getState().selectedId, "ENGINE");
+  assert.equal(controller.getState().renderer, "2d", "the granted context must be reported, not assumed");
   assert.equal(controller.getState().reducedMotion, true);
   assert.equal(controller.getState().pixelRatio, 2);
   assert.equal(canvas.style.width, undefined, "renderer must not freeze the responsive CSS width inline");
@@ -122,14 +123,60 @@ test("the renderer asks for real webgl with hand-written shaders and an explicit
   assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest/);
 });
 
+// Stub WebGL context. Real rasterisation cannot be checked headlessly (the boot
+// probe reads pixels back from Chromium for that), but everything around it —
+// program construction, the compile/link status checks, the per-subsystem draw
+// calls, and teardown — is ordinary JavaScript and is exercised here.
+function stubGl({ compiles = true, links = true } = {}) {
+  const calls = { programs: 0, shaders: 0, drawArrays: 0, vertices: 0, deletes: 0 };
+  const base = {
+    createShader: () => { calls.shaders += 1; return { shader: calls.shaders }; },
+    createProgram: () => { calls.programs += 1; return { program: calls.programs }; },
+    createBuffer: () => ({ buffer: true }),
+    createTexture: () => ({ texture: true }),
+    getShaderParameter: () => compiles,
+    getProgramParameter: () => links,
+    getShaderInfoLog: () => "stub shader diagnostic",
+    getProgramInfoLog: () => "stub program diagnostic",
+    getAttribLocation: (_program, name) => name.length,
+    getUniformLocation: (_program, name) => ({ name }),
+    getExtension: () => null,
+    drawArrays: (_mode, _first, count) => { calls.drawArrays += 1; calls.vertices += count; },
+    deleteBuffer: () => { calls.deletes += 1; },
+    deleteTexture: () => { calls.deletes += 1; },
+    deleteProgram: () => { calls.deletes += 1; },
+  };
+  let constant = 0x1000;
+  // Anything not spelled out above is a GL constant (SCREAMING_SNAKE) or a
+  // command whose return value the renderer never reads.
+  const gl = new Proxy(base, {
+    get(target, key) {
+      if (key in target || typeof key !== "string") return target[key];
+      constant += 1;
+      target[key] = /^[A-Z][A-Z0-9_]*$/.test(key) ? constant : () => {};
+      return target[key];
+    },
+  });
+  return { gl, calls };
+}
+
+// Minimal document for the label atlas: a canvas whose 2d context measures text.
+function stubDocument() {
+  const context = new Proxy(
+    { measureText: (text) => ({ width: text.length * 11 }) },
+    { get: (target, key) => (key in target ? target[key] : (target[key] = () => {})) },
+  );
+  return { createElement: () => ({ width: 0, height: 0, getContext: (kind) => (kind === "2d" ? context : null) }) };
+}
+
 // Harness for the controller with a fully injectable clock and frame scheduler.
-function harness({ reducedMotion = false, contexts = ["2d"] } = {}) {
-  const calls = { selected: [], errors: [], frames: 0, cancelled: 0, disconnected: 0 };
+function harness({ reducedMotion = false, contexts = ["2d"], gl = null, doc = null, onLayoutChange } = {}) {
+  const calls = { selected: [], errors: [], layouts: [], frames: 0, cancelled: 0, disconnected: 0 };
   const listeners = new Map();
   const context = new Proxy({}, { get: (target, key) => target[key] || (() => {}) });
   const canvas = {
     width: 0, height: 0, clientWidth: 800, clientHeight: 500, tabIndex: -1, style: {},
-    getContext: (kind) => (contexts.includes(kind) ? context : null),
+    getContext: (kind) => (contexts.includes(kind) ? (kind === "2d" ? context : gl) : null),
     getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 500 }),
     addEventListener: (type, fn) => listeners.set(type, fn),
     removeEventListener: (type) => listeners.delete(type),
@@ -140,6 +187,7 @@ function harness({ reducedMotion = false, contexts = ["2d"] } = {}) {
   const queue = [];
   const environment = {
     devicePixelRatio: 3,
+    document: doc,
     performance: { now: () => clock },
     requestAnimationFrame(fn) { calls.frames += 1; queue.push(fn); return calls.frames; },
     cancelAnimationFrame() { calls.cancelled += 1; },
@@ -150,6 +198,7 @@ function harness({ reducedMotion = false, contexts = ["2d"] } = {}) {
     environment,
     onSelect: (detail) => calls.selected.push(detail),
     onError: (error) => calls.errors.push(error),
+    onLayoutChange: (layout) => { calls.layouts.push(layout); if (onLayoutChange) onLayoutChange(layout); },
   });
   // Drain the queue the way a browser would: advance the clock one frame at a time.
   const pump = (limit = 400) => {
@@ -164,6 +213,108 @@ function harness({ reducedMotion = false, contexts = ["2d"] } = {}) {
   const freezeClock = () => { tick = 0; };
   return { calls, canvas, listeners, controller, pump, queue, freezeClock };
 }
+
+test("a granted webgl context builds the real webgl renderer and draws every subsystem", () => {
+  const stub = stubGl();
+  const rig = harness({ contexts: ["webgl2", "2d"], gl: stub.gl, doc: stubDocument() });
+  assert.equal(rig.controller.getState().renderer, "webgl", "a granted webgl2 context must not silently fall back");
+  assert.ok(stub.calls.programs >= 2, "the mesh and overlay programs must both be built");
+  assert.ok(stub.calls.shaders >= 4, "both programs need a vertex and a fragment shader");
+
+  rig.controller.update(scenario(["VEHICLE", "HEAT-SHIELD", "TPS-TILE"]));
+  rig.pump();
+  assert.ok(
+    stub.calls.drawArrays >= 10,
+    `expected the 8 subsystems plus backdrop and hud draws, got ${stub.calls.drawArrays}`,
+  );
+  assert.ok(stub.calls.vertices > 1000, `expected real geometry, got ${stub.calls.vertices} vertices`);
+
+  const drawn = stub.calls.drawArrays;
+  rig.controller.setExploded(true);
+  rig.pump();
+  assert.ok(stub.calls.drawArrays > drawn, "separating the stack must redraw it");
+
+  rig.controller.dispose();
+  assert.ok(stub.calls.deletes >= 6, "buffers, texture, and programs must all be released");
+  assert.deepEqual(rig.calls.errors, []);
+});
+
+test("a webgl context whose shaders will not compile falls back to the 2d renderer", () => {
+  const stub = stubGl({ compiles: false });
+  const rig = harness({ contexts: ["webgl2", "webgl", "2d"], gl: stub.gl, doc: stubDocument() });
+  assert.equal(rig.controller.getState().renderer, "2d", "an unusable webgl context must fall through to 2d");
+  rig.controller.update(scenario(["VEHICLE", "PROP-MODULE", "ENGINE"], 2));
+  rig.pump();
+  assert.equal(stub.calls.drawArrays, 0, "nothing may be drawn through a broken webgl program");
+  assert.deepEqual(rig.calls.errors, [], "a working 2d fallback is not an error condition");
+});
+
+test("a webgl program that will not link and no 2d canvas surfaces the underlying failure", () => {
+  const stub = stubGl({ links: false });
+  const rig = harness({ contexts: ["webgl"], gl: stub.gl, doc: stubDocument() });
+  assert.equal(rig.controller.getState().available, false);
+  assert.equal(rig.controller.getState().renderer, null);
+  assert.match(rig.calls.errors[0].message, /2D canvas rendering are unavailable/);
+  assert.match(rig.calls.errors[0].message, /program link failed: stub program diagnostic/);
+});
+
+test("layout changes are announced from every source that can move the renderer", () => {
+  const rig = harness({ reducedMotion: true });
+  rig.controller.update(scenario(["VEHICLE", "HEAT-SHIELD", "TPS-TILE"]));
+  rig.pump();
+  assert.deepEqual(
+    rig.calls.layouts.at(-1), { exploded: false, explodeAmount: 0, selectedId: "TPS-TILE" },
+    "a new scenario must announce the selection it forced",
+  );
+
+  rig.controller.setExploded(true);
+  assert.deepEqual(rig.calls.layouts.at(-1), { exploded: true, explodeAmount: 1, selectedId: "TPS-TILE" });
+  rig.controller.setExplodeAmount(0.4);
+  assert.deepEqual(rig.calls.layouts.at(-1), { exploded: false, explodeAmount: 0.4, selectedId: "TPS-TILE" });
+
+  const settled = rig.calls.layouts.length;
+  rig.controller.setExplodeAmount(0.4);
+  assert.equal(rig.calls.layouts.length, settled, "an unchanged layout must not be announced again");
+
+  rig.listeners.get("keydown")({ key: "x", preventDefault() {} });
+  assert.deepEqual(rig.calls.layouts.at(-1), { exploded: true, explodeAmount: 1, selectedId: "TPS-TILE" }, "the keyboard toggle must announce");
+
+  rig.listeners.get("keydown")({ key: "ArrowRight", preventDefault() {} });
+  assert.notEqual(rig.calls.layouts.at(-1).selectedId, "TPS-TILE", "arrow focus must announce the subsystem it moved to");
+  rig.controller.selectNode("ENGINE");
+  assert.equal(rig.calls.layouts.at(-1).selectedId, "ENGINE");
+
+  // Pointer pick, driven at the projected position the 2d renderer just used.
+  rig.pump();
+  const state = rig.controller.getState();
+  const spread = 1 + state.explodeAmount * 0.55;
+  const vehicle = state.model.nodes.find((node) => node.id === "VEHICLE");
+  const scale = Math.min(800 / 680, 500 / 500);
+  rig.listeners.get("click")({
+    clientX: 400 + (vehicle.x * spread - vehicle.z * 0.38) * scale,
+    clientY: 250 + (vehicle.y * spread + vehicle.z * 0.2) * scale,
+  });
+  assert.equal(rig.calls.layouts.at(-1).selectedId, "VEHICLE", "picking a subsystem must announce the selection");
+
+  rig.controller.update(scenario(["VEHICLE", "PROP-MODULE", "ENGINE"], 2));
+  assert.equal(rig.calls.layouts.at(-1).selectedId, "ENGINE", "a scenario reset must announce the selection it took");
+  assert.deepEqual(rig.calls.errors, []);
+  rig.controller.dispose();
+});
+
+test("a subscriber that throws is reported and never stalls the renderer", () => {
+  const rig = harness({
+    reducedMotion: true,
+    onLayoutChange: () => { throw new Error("subscriber exploded"); },
+  });
+  rig.controller.update(scenario(["VEHICLE", "HEAT-SHIELD", "TPS-TILE"]));
+  rig.pump();
+  assert.equal(rig.controller.setExploded(true), true, "the renderer must keep working through a broken listener");
+  assert.equal(rig.controller.getState().explodeAmount, 1);
+  assert.ok(rig.calls.errors.length > 0, "a broken listener must be reported, not swallowed");
+  assert.match(rig.calls.errors.at(-1).message, /subscriber exploded/);
+  rig.controller.dispose();
+});
 
 test("the exploded-view transition animates to completion and then stops requesting frames", () => {
   const rig = harness();

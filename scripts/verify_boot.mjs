@@ -24,6 +24,73 @@ server.listen(0, "127.0.0.1");
 await once(server, "listening");
 const port = server.address().port;
 
+// Fraction of the vehicle column that must come back brighter than BRIGHT for
+// the launch vehicle to count as rasterised. Measured in this headless
+// Chromium: 12% (desktop) and 24% (mobile) with the mesh drawn, 0.5% and 1.1%
+// with the mesh draw call removed, so the bar sits an order of magnitude clear
+// of a dead renderer and half an order below a live one.
+const BRIGHT = 0.30;
+const MIN_PAINTED = 0.05;
+// The vehicle occupies the left of the canvas; the right is the callout column,
+// which still paints when the mesh does not.
+const VEHICLE_COLUMN = 0.62;
+
+// Reads the drawing buffer from inside a rAF callback queued AFTER the
+// renderer's own, so the sample is taken before the frame is composited (the
+// context is not preserveDrawingBuffer, so a later read would come back blank).
+// A separation transition is started first, which guarantees the renderer has a
+// frame in flight and keeps re-scheduling itself for the frames sampled here.
+function samplePaint({ bright, column, frames }) {
+  return new Promise((resolve, reject) => {
+    try {
+      const canvas = document.querySelector("#sceneCanvas");
+      if (!canvas) throw new Error("#sceneCanvas is missing");
+      window.FlowScene.setExplode(0.85);
+      const off = document.createElement("canvas");
+      off.width = canvas.width;
+      off.height = canvas.height;
+      const ctx = off.getContext("2d");
+      if (!ctx) throw new Error("no 2d context for the pixel readback");
+      let best = { painted: 0, mean: 0 };
+      let left = frames;
+      const sample = () => {
+        try {
+          const width = Math.max(1, Math.round(canvas.width * column));
+          ctx.clearRect(0, 0, off.width, off.height);
+          ctx.drawImage(canvas, 0, 0);
+          const { data } = ctx.getImageData(0, 0, width, canvas.height);
+          let painted = 0;
+          let sum = 0;
+          for (let i = 0; i < data.length; i += 4) {
+            const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+            sum += lum;
+            if (lum >= bright) painted += 1;
+          }
+          const total = data.length / 4;
+          const frame = { painted: painted / total, mean: sum / total, width, height: canvas.height };
+          if (frame.painted > best.painted) best = frame;
+          left -= 1;
+          if (left > 0) requestAnimationFrame(sample);
+          else resolve(best);
+        } catch (error) { reject(error); }
+      };
+      requestAnimationFrame(sample);
+    } catch (error) { reject(error); }
+  });
+}
+
+// Waits for renderer-owned state to reach `predicate`, and reports what the
+// renderer actually held when it does not, so a dead seam names itself instead
+// of failing as a bare timeout.
+async function settle(page, predicate, message, timeout = 5000) {
+  try {
+    await page.waitForFunction(predicate, null, { timeout });
+  } catch {
+    const state = await page.evaluate(() => window.FlowScene?.getVehicleState?.());
+    assert.fail(`${message} (renderer state: ${JSON.stringify(state)})`);
+  }
+}
+
 let browser;
 try {
   const { chromium } = await import("playwright");
@@ -39,19 +106,73 @@ try {
     assert.equal(await page.locator("#readyBuilds").textContent(), "4");
     await page.locator('[data-preset="switch"]').click();
     assert.match(await page.locator("#criticalPath").textContent(), /engine/i);
-    // Integration ground truth: the shell's vehicle-view controls must reach a
-    // LIVE renderer through the bridge. Every one of these is a no-op that still
-    // renders and still passes lint if the seam is not actually wired, so assert
-    // the returned state rather than the button's aria-pressed attribute.
-    const exploded = await page.evaluate(() => window.FlowScene?.setLayout?.({ mode: "exploded", amount: 0.65 }));
-    assert.equal(exploded, true, "vehicle-view control did not reach a live renderer");
-    const integrated = await page.evaluate(() => window.FlowScene?.setLayout?.({ mode: "integrated", amount: 0 }));
-    assert.equal(integrated, false, "vehicle-view control did not reseat the integrated layout");
 
+    // Integration ground truth. Every assertion below reads state the RENDERER
+    // owns, or the pixels it produced: a seam that reports its own arguments
+    // back, or a renderer that never rasterises, has to fail here.
+    const label = `${viewport.width}x${viewport.height}`;
+    await page.evaluate(() => {
+      window.__layoutEvents = [];
+      window.FlowScene.onVehicleChange((layout) => window.__layoutEvents.push(layout));
+    });
+    const replay = await page.evaluate(() => window.__layoutEvents[0]);
+    assert.ok(replay, `${label}: onVehicleChange did not replay the current layout on registration`);
+    assert.deepEqual(
+      Object.keys(replay).sort(), ["exploded", "explodeAmount", "selectedId"].sort(),
+      `${label}: onVehicleChange payload shape changed`,
+    );
+
+    const boot = await page.evaluate(() => window.FlowScene?.getVehicleState?.());
+    assert.ok(boot?.available, `${label}: the renderer never came up`);
+    assert.equal(boot.renderer, "webgl", `${label}: expected the WebGL renderer, got ${boot.renderer}`);
+
+    // The launch vehicle must actually reach the framebuffer.
+    const paint = await page.evaluate(samplePaint, { bright: BRIGHT, column: VEHICLE_COLUMN, frames: 4 });
+    assert.ok(
+      paint.painted >= MIN_PAINTED,
+      `${label}: the vehicle did not rasterise; only ${(paint.painted * 100).toFixed(2)}% of the `
+      + `${paint.width}x${paint.height} vehicle column is lit (mean luminance ${paint.mean.toFixed(3)}, floor ${MIN_PAINTED * 100}%)`,
+    );
+
+    // The shell's exploded control must move renderer-owned state, not just its
+    // own aria attributes, and the eased transition must land on the target.
+    await page.evaluate(() => window.FlowScene.setLayout({ mode: "integrated" }));
+    await settle(
+      page, () => window.FlowScene.getVehicleState().explodeAmount === 0,
+      `${label}: setLayout({ mode: "integrated" }) never reached the renderer`,
+    );
+    // Only events raised by the control itself count as proof it reached the renderer.
+    await page.evaluate(() => { window.__layoutEvents = []; });
+    await page.locator('[data-scene-layout="exploded"]').click();
+    await settle(
+      page, () => window.FlowScene.getVehicleState().explodeTarget > 0.5,
+      `${label}: the exploded control never set a separation target on the renderer`,
+    );
+    await settle(
+      page, () => window.FlowScene.getVehicleState().explodeAmount > 0.5,
+      `${label}: the renderer never animated out to the separation target`,
+    );
+    const separated = await page.evaluate(() => window.FlowScene.getVehicleState());
+    assert.equal(separated.exploded, true, `${label}: the exploded control did not reach the renderer`);
+    assert.ok(separated.explodeAmount > 0.5, `${label}: the renderer never separated the stack`);
+    assert.ok(
+      (await page.evaluate(() => window.__layoutEvents)).some((event) => event.explodeAmount > 0.5),
+      `${label}: the renderer did not announce the exploded layout`,
+    );
+
+    // Selection has to propagate into the renderer and back out to the readout.
     const before = await page.locator("#selectedNodeDetail").textContent();
     await page.locator('[data-scene-node="PROP-MODULE"]').click();
     const after = await page.locator("#selectedNodeDetail").textContent();
     assert.notEqual(after, before, "selecting a subsystem did not update the readout");
+    assert.equal(
+      await page.evaluate(() => window.FlowScene.getVehicleState().selectedId), "PROP-MODULE",
+      `${label}: the renderer did not take the selection`,
+    );
+    assert.equal(
+      await page.evaluate(() => window.__layoutEvents.at(-1).selectedId), "PROP-MODULE",
+      `${label}: the renderer did not announce the selection`,
+    );
 
     const layout = await page.evaluate(() => ({
       viewport: window.innerWidth,
@@ -65,7 +186,7 @@ try {
     assert.equal(layout.inlineWidth, "", "scene canvas width must remain responsive");
     await page.close();
   }
-  console.log("boot contract: desktop/mobile scenarios, console, and responsive layout passed");
+  console.log("boot contract: desktop/mobile scenarios, live webgl renderer, painted vehicle, renderer-owned layout state, console, and responsive layout passed");
 } finally {
   await browser?.close();
   server.close();
