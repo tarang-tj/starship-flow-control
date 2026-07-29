@@ -4,11 +4,12 @@
   "private": true,
   "description": "Synthetic, deterministic multi-level BOM constraint radar.",
   "scripts": {
-    "lint": "eslint web/*.js tests/*.test.mjs eslint.config.mjs",
+    "lint": "eslint web/*.js tests/*.test.mjs scripts/*.mjs eslint.config.mjs",
     "test:python": "python3 -m unittest discover -s tests -v",
     "test:web": "node --test tests/*.test.mjs",
     "verify:assets": "python3 scripts/verify_assets.py",
-    "gate": "npm run lint && npm run test:python && npm run test:web && npm run verify:assets"
+    "verify:boot": "node scripts/verify_boot.mjs",
+    "gate": "npm run lint && npm run test:python && npm run test:web && npm run verify:assets && npm run verify:boot"
   },
   "repository": {
     "type": "git",
@@ -16,6 +17,7 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^9.39.5"
+    "eslint": "^9.39.5",
+    "playwright": "1.52.0"
   }
 }

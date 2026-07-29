@@ -1,6 +1,6 @@
 export default [
   {
-    files: ["web/*.js", "scripts/*.mjs", "tests/*.test.mjs"],
+    files: ["web/*.js", "scripts/*.mjs", "tests/*.test.mjs", "eslint.config.mjs"],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: "module",
