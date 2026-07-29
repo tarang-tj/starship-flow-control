@@ -8,7 +8,7 @@ A deterministic, multi-level bill-of-materials constraint radar built as an inde
 
 ## Why this exists
 
-A planning dashboard that only lists late purchase orders misses the important question: which late or short component actually limits the integrated build plan? Flow Control propagates leaf-level material availability through a multi-level BOM, surfaces the limiting path, and lets an operator compare recovery scenarios without changing the baseline.
+A planning dashboard that only lists late purchase orders misses the important question: which late or short component actually limits the integrated build plan? A late purchase order is not automatically the constraint. Flow Control propagates leaf-level material availability through a multi-level BOM, surfaces the limiting path, and lets an operator compare recovery scenarios without changing the baseline.
 
 ## What it does
 
@@ -16,8 +16,10 @@ A planning dashboard that only lists late purchase orders misses the important q
 - Recursively computes available parent assemblies from child quantities.
 - Propagates a limiting leaf component to the integrated vehicle.
 - Ranks target-plan shortages with a transparent impact heuristic.
+- Explains each selected component: usable versus required, the fate of every inbound order against the horizon, lead-time feasibility, quantity-per-parent propagation, and the resulting integrated-build consequence.
+- States the causal chain in plain language: which leaf caps which parent, and what that costs the build plan.
 - Provides two what-if levers: arrival timing and engine inventory.
-- Fails loudly on unknown BOM references and cycles.
+- Fails loudly on unknown BOM references, unknown order parts, and cycles.
 
 ## Run
 
@@ -36,7 +38,21 @@ Install dependencies once with `npm install`, then run the exact repository gate
 npm run gate
 ```
 
-The gate runs ESLint, the deterministic Python model tests, browser-contract tests, and asset verification. To regenerate the checked reference result separately:
+`npm run gate` expands to exactly:
+
+```bash
+npm run lint && npm run test:python && npm run test:web && npm run verify:assets && npm run verify:boot
+```
+
+| Step | What it actually runs |
+|---|---|
+| `lint` | ESLint over `web/*.js`, `tests/*.test.mjs`, `scripts/*.mjs`, `eslint.config.mjs` |
+| `test:python` | `python3 -m unittest discover -s tests` — deterministic engine tests |
+| `test:web` | `node --test tests/*.test.mjs` — scene and cockpit contract tests, including the cockpit executed in a `node:vm` sandbox against a stub DOM |
+| `verify:assets` | `python3 scripts/verify_assets.py` — deterministic output, baseline assertions, entry point, disclosures |
+| `verify:boot` | `node scripts/verify_boot.mjs` — Playwright Chromium boots the real page at 1440×900 and 375×812, drives all three presets, and fails on any console error or horizontal overflow |
+
+There is no hosted CI. This local gate is the only gate, and a partial run does not count. To regenerate the checked reference result separately:
 
 ```bash
 python3 engine.py data/baseline.json --output web/result.json
@@ -67,14 +83,37 @@ Target demand is expanded down the BOM. A leaf is an active constraint when usab
 
 The score prioritizes work. It is not a predicted probability of failure.
 
-## Deliberate boundaries
+## IP and model boundaries
+
+### What is synthetic
+
+Everything in `data/baseline.json` and everything rendered from it. Part names, part numbers, categories, on-hand quantities, unit costs, lead times, purchase-order identifiers, order quantities, arrival days, confidence values, the BOM structure, the 21-day horizon, and the four-build target were authored for this demonstration. No real inventory, schedule, supplier, price, or operational record is used anywhere in this repository.
+
+### What is modeled
+
+- Horizon-gated supply: an inbound order counts only if it arrives on or before the horizon day.
+- Quantity-per-parent propagation through a fixed multi-level BOM.
+- Availability of a parent as the minimum over its children, floored to whole builds.
+- Target demand expanded top-down from the build target.
+- A leaf-level shortage against expanded demand, its build-gap consequence, and an inspectable priority score.
+- Two what-if levers only: the thermal tile arrival day and engine assemblies on hand.
+
+### What is not claimed
+
+- No affiliation with, endorsement by, or representation of SpaceX or any other company. No logos, wordmarks, trade dress, CAD, telemetry, facilities, or operational data are used or implied.
+- The vehicle view is a procedural, stylized depiction used as a spatial index into the synthetic BOM. It is not engineering geometry and carries no dimensional meaning.
+- The risk score is a work-prioritization heuristic, not a calibrated probability of failure or delay.
+- The result is not a schedule, an MRP run, a purchasing recommendation, or safety-critical guidance.
+- Assembly-level on-hand stock is deliberately not credited toward parent availability. Parent availability comes from child supply only, which is a modeling simplification, not a claim about how real work-in-process is counted.
+
+### Deliberately not modeled
 
 This is a narrow decision-support prototype, not an MRP system. It does not model:
 
 - supplier capacity or production yield,
 - alternate parts or substitutions,
 - work-center capacity and routing,
-- partial assembly or safety stock,
+- partial assembly, work-in-process, or safety stock,
 - quality holds or engineering-change effectivity,
 - real aerospace hardware or proprietary operations.
 
@@ -88,23 +127,53 @@ data/baseline.json
        ├── engine.py ──> deterministic JSON result
        │      └── tests/test_engine.py (6 fault-oriented tests)
        │
-       └── web/app.js ──> browser scenario engine
+       └── web/app.js ──> browser scenario engine + operator readout
+              ├── web/bridge.js ──> web/scene.js (WebGL vehicle view)
               └── web/index.html + styles.css
 ```
 
-## 3D digital thread
+## 3D digital thread and the vehicle view
 
-The optional 3D scene is a digital-thread navigation aid, not a second source of truth. A selected node links the visible vehicle/assembly/component to the same deterministic BOM result shown in the constraint queue, critical path, and order board. If the scene module or canvas is unavailable, the operating view still runs; future selected-node detail regions receive concise synthetic fixture text when present.
+The vehicle view is a procedural, stylized depiction of a stainless-steel launch vehicle that acts as the spatial index into the synthetic BOM. Selecting a subsystem in the exploded view selects the same node in the deterministic result: the constraint queue, critical path, and operator readout all describe that one component. The scene is a navigation aid, not a second source of truth, and it renders nothing the arithmetic does not already contain. It is a depiction, not engineering geometry.
+
+The renderer lives in `web/scene.js` (an ES module, import-free so GitHub Pages serves it with no build step) and reaches the cockpit only through `web/bridge.js`, which publishes `window.FlowScene`. `scene.js` owns its own drawing context, so the depiction can be rendered with WebGL or with the 2D canvas without the cockpit changing: the cockpit controller `web/app.js` stays a classic script, never imports the renderer, and only ever sees `setScenario`, `update`, and `getSelectedNode`. If the module, the graphics context, or the canvas is unavailable, the renderer reports it through `#sceneFallback`, the operating view keeps running, and the critical path and exception queue carry the same answer in plain HTML.
 
 Rendering has an explicit performance boundary: scenario arithmetic and the accessible DOM remain primary. Slider previews are coalesced to one animation-frame update, while the optional scene receives an on-demand render/update only after a scenario state is evaluated. There is no perpetual render loop required by the decision workflow.
 
+## Operator readout
+
+Selecting any node writes a full evidence block, not a status word. For the baseline limiting leaf it reads:
+
+```text
+Thermal protection tile — LIMITING LEAF
+COMPONENT / Structures — 4,200 per thermal protection set, 42-day nominal lead time.
+Supply: 12,800 on hand + 0 inbound inside day 21 = 12,800 usable against 16,800
+  required for 4 builds, so short 4,000 units.
+Inbound PO-1088: 5,200 units land day 34, after the 21-day horizon, so the model
+  excludes them from usable supply (72% confidence).
+Lead time 42 days exceeds the 21-day horizon, so a fresh buy cannot land in time.
+  Recovery has to come from pulling an existing receipt inside the horizon.
+Consequence: supports 3 of 4 integrated builds, a build gap of 1, $960,000 of
+  synthetic shortage value.
+Causal chain (builds supported at each level): thermal protection tile covers 3
+  builds then thermal protection set covers 3 builds then integrated vehicle
+  delivers 3 of 4. That chain is the build gap: 1 vehicle short of target.
+Action: Evaluate expediting 4,000 units inside day 21.
+```
+
+Nodes that are not on the limiting path say so and name the chain that is binding instead, so the view answers "why not this one" as well as "why this one".
+
 ## 60-second demo
 
-1. **Frame the decision (0–10s):** four builds are due inside 21 days; ask which material condition limits release. All inputs are synthetic.
-2. **Read baseline (10–22s):** day 34 / 25 engines yields 3 ready versus 4 target. Trace the limiting leaf through the digital thread and state the operator recommendation.
-3. **Recover (22–37s):** move tile arrival to day 9 while holding engines at 25. The live preview reports the explicit before → after delta: readiness rises and the gap clears. The frozen baseline remains the comparison anchor.
-4. **Switch the constraint (37–50s):** hold day 9 and reduce engines to 22. The limiting path moves to propulsion, showing why solving one shortage can expose the next constraint.
-5. **Close on verification (50–60s):** open Method, distinguish a prioritization score from a probability, name the model omissions, and cite `npm run gate` as the reproducible contract.
+**Frame the decision (0–10s).** Four builds are due inside a 21-day horizon. The question is not which order is late, it is which material condition limits release. Every input is synthetic.
+
+**Preset 01 baseline (10–24s).** Tile arrival day 34, 25 engines on hand. Result: **3 of 4 ready, gap 1, $960,000 of shortage value**, limiting leaf thermal protection tile. The causal chain: 12,800 tiles on hand against 16,800 required, PO-1088's 5,200 units land day 34 which is outside the horizon so they do not count, the thermal protection set is therefore capped at 3, and the integrated vehicle is capped at 3. **Recommendation: expedite 4,000 tiles inside day 21.** PO-1088 already covers 5,200 units, so this is a date change, not a new buy — which matters because the 42-day lead time means a fresh buy cannot land inside the horizon at all.
+
+**Preset 02 recover (24–38s).** Hold engines at 25, pull tile arrival to day 9. Before → after: **ready 3 → 4 (+1), gap 1 → 0 (−1), shortage value $960,000 → $0**, and the limiting leaf moves from thermal protection tile to engine assembly. The baseline stays frozen as the comparison anchor. **Recommendation: release the four-build plan, but the new tightest leaf is engine assembly with exactly 1 spare unit (25 on hand against 24 required), so confirm that cover before committing.**
+
+**Preset 03 switch the constraint (38–52s).** Hold day 9, drop engines to 22. Before → after against baseline: **ready 3 → 3 (no change), gap 1 → 1 (no change)** — the headline numbers are identical to the baseline, and that is the point. The limiting leaf has moved from thermal protection tile to engine assembly, and shortage value has risen $960,000 → $1,880,000. Engines are 2 units short of the 24 required at 6 per propulsion module, with no order on the book and a 28-day lead time against a 21-day horizon. **Recommendation: validate a recovery source for 2 engine assemblies; the thermal fix no longer helps this plan.** Solving one shortage exposes the next one.
+
+**Close on verification (52–60s).** Open Method: a prioritization score is not a probability, the omissions are listed on purpose, and `npm run gate` is the reproducible contract that includes a real browser boot of this page.
 
 ## Responsible use and interview boundary
 
