@@ -50,7 +50,22 @@ npm run lint && npm run test:python && npm run test:web && npm run verify:assets
 | `test:python` | `python3 -m unittest discover -s tests` — deterministic engine tests |
 | `test:web` | `node --test tests/*.test.mjs` — scene and cockpit contract tests, including the cockpit executed in a `node:vm` sandbox against a stub DOM |
 | `verify:assets` | `python3 scripts/verify_assets.py` — deterministic output, baseline assertions, entry point, disclosures |
-| `verify:boot` | `node scripts/verify_boot.mjs` — Playwright Chromium boots the real page at 1440×900 and 375×812, drives all three presets, and fails on any console error or horizontal overflow |
+| `verify:boot` | `node scripts/verify_boot.mjs`: Playwright Chromium boots the real page at 1440×900 and 375×812 (see below) |
+
+### What the boot probe actually asserts
+
+At each of the two viewports, against the real page served over HTTP:
+
+- The baseline renders on load: `#readyBuilds` reaches 3 with no click. Baseline is the initial state, so the probe verifies it rather than driving it from a preset button.
+- Clicking the recover preset yields 4 ready builds; clicking the switch preset moves the critical path to the engine assembly.
+- The renderer came up on WebGL, reported by the renderer itself through `getVehicleState()`, not inferred from the absence of a fallback message.
+- The vehicle actually reached the framebuffer: the probe reads back the drawing buffer and requires at least 5% of the vehicle column to be lit. Measured in this headless Chromium, that column comes back 12% lit (desktop) and 24% (mobile) with the mesh drawn, and 0.5% and 1.1% with the mesh draw call removed, so the floor sits an order of magnitude clear of a dead renderer.
+- The exploded-view control moves state the renderer owns (separation target, then animated amount, then the layout event the renderer raises), not the button's own `aria-pressed` attribute. A disconnected control still sets its own attributes and still passes lint, so attributes prove nothing.
+- Clicking a subsystem button changes `#selectedNodeDetail` and the renderer reports the same selection back.
+- Zero console errors and zero page errors, at both viewports.
+- No horizontal overflow, no scene canvas wider than the viewport, and no hard-coded inline canvas width.
+
+The cockpit contract tests cover the arithmetic and the render path; this probe covers what only a real browser can answer.
 
 There is no hosted CI. This local gate is the only gate, and a partial run does not count. To regenerate the checked reference result separately:
 
@@ -78,10 +93,20 @@ Target demand is expanded down the BOM. A leaf is an active constraint when usab
 50 × build_gap
 + 20 × late_order_indicator
 + 15 × min(lead_time / horizon, 2)
-+ 15 × inbound_confidence_penalty
++ 15 × inbound_confidence_penalty        # engine.py only, see below
 ```
 
 The score prioritizes work. It is not a predicted probability of failure.
+
+### Two implementations, one authoritative
+
+`engine.py` is authoritative for the risk score and for the checked reference result in `web/result.json`. It implements all four terms, where `inbound_confidence_penalty = 1 − supply_confidence` and `supply_confidence` is the lowest confidence among the orders for that part that land **inside** the horizon (1.0 when there are none).
+
+The browser scenario engine in `web/app.js` implements the first three terms only. It does not track `supply_confidence`, so it omits the fourth term.
+
+The two agree on every scenario this UI can produce, and not by luck: the fourth term is non-zero only for a leaf that is both short and expecting a discounted receipt inside the horizon, and no leaf reachable through the two levers is ever in that state. The only leaf with a discounted inbound order is the thermal tile, and pulling PO-1088 inside the horizon is exactly what clears its shortage. Swept over both levers (tile arrival day 0–60 × engines on hand 0–40), every constraint `engine.py` reports carries `supply_confidence = 1.0`, so the penalty is always zero.
+
+This is a documented divergence, not a claim of equivalence. A wider dataset, one with a discounted receipt on a leaf that stays short, would separate the two scores, and `engine.py`'s number would be the correct one.
 
 ## IP and model boundaries
 
@@ -129,14 +154,29 @@ data/baseline.json
        │
        └── web/app.js ──> browser scenario engine + operator readout
               ├── web/bridge.js ──> web/scene.js (WebGL vehicle view)
+              ├── web/shell.js ──> vehicle-view controls (layout, explode, node focus)
               └── web/index.html + styles.css
 ```
+
+| File | Role |
+|---|---|
+| `web/app.js` | Classic script. Owns the arithmetic, the DOM readout, and the presets. Never imports the renderer. |
+| `web/bridge.js` | ES module. Imports `scene.js` and publishes `window.FlowScene`. The only seam. |
+| `web/scene.js` | ES module. Owns its own drawing context and all geometry. |
+| `web/shell.js` | Classic script. Chrome-level controls (view mode, explode slider, subsystem buttons) that call the renderer through `window.FlowScene`. |
 
 ## 3D digital thread and the vehicle view
 
 The vehicle view is a procedural, stylized depiction of a stainless-steel launch vehicle that acts as the spatial index into the synthetic BOM. Selecting a subsystem in the exploded view selects the same node in the deterministic result: the constraint queue, critical path, and operator readout all describe that one component. The scene is a navigation aid, not a second source of truth, and it renders nothing the arithmetic does not already contain. It is a depiction, not engineering geometry.
 
-The renderer lives in `web/scene.js` (an ES module, import-free so GitHub Pages serves it with no build step) and reaches the cockpit only through `web/bridge.js`, which publishes `window.FlowScene`. `scene.js` owns its own drawing context, so the depiction can be rendered with WebGL or with the 2D canvas without the cockpit changing: the cockpit controller `web/app.js` stays a classic script, never imports the renderer, and only ever sees `setScenario`, `update`, and `getSelectedNode`. If the module, the graphics context, or the canvas is unavailable, the renderer reports it through `#sceneFallback`, the operating view keeps running, and the critical path and exception queue carry the same answer in plain HTML.
+The renderer lives in `web/scene.js` (an ES module, import-free so GitHub Pages serves it with no build step) and reaches the rest of the page only through `web/bridge.js`, which publishes `window.FlowScene`. `scene.js` owns its own drawing context, so the depiction can be rendered with WebGL or with the 2D canvas without the cockpit changing.
+
+Two files consume that seam, and they consume different halves of it:
+
+- `web/app.js`, the cockpit controller, stays a classic script, never imports the renderer, and only ever sees `setScenario`, `update`, and `getSelectedNode`. That is the scenario half.
+- `web/shell.js`, the vehicle-view chrome, calls `setLayout({ mode, amount })` with `setExplode(amount)` as a fallback, plus `selectNode(partId)`. That is the view half, and it never touches the scenario arithmetic.
+
+Every call in both directions is feature-detected. `shell.js` additionally wraps each call in a try/catch and downgrades a throwing renderer to a `console.warn` and its text readout, because a renderer fault must not break the cockpit. If the module, the graphics context, or the canvas is unavailable, the renderer reports it through `#sceneFallback`, the operating view keeps running, and the critical path and exception queue carry the same answer in plain HTML.
 
 Rendering has an explicit performance boundary: scenario arithmetic and the accessible DOM remain primary. Slider previews are coalesced to one animation-frame update, while the optional scene receives an on-demand render/update only after a scenario state is evaluated. There is no perpetual render loop required by the decision workflow.
 
