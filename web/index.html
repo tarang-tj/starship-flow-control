@@ -138,26 +138,7 @@
       <section><h3>Why deterministic</h3><p>Inventory arithmetic is consequential. Explainable constraints and fault-tested validation matter more here than generative output.</p></section>
     </div>
   </dialog>
-  <script type="module">
-    import { createDigitalThread } from "./scene.js";
-    const canvas = document.getElementById("sceneCanvas");
-    const status = document.getElementById("sceneStatus");
-    const fallback = document.getElementById("sceneFallback");
-    let controller;
-    const ensure = (onSelect) => {
-      if (!controller) controller = createDigitalThread(canvas, {
-        onSelect,
-        onError: (error) => { status.textContent = "CANVAS FALLBACK"; fallback.hidden = false; console.error(error); }
-      });
-      return controller;
-    };
-    window.FlowScene = {
-      setScenario({result, onSelect}) { const scene = ensure(onSelect); scene.update(result); status.textContent = result.summary.gap ? "CONSTRAINT ACTIVE" : "PLAN CLEAR"; },
-      update({result, onSelect}) { const scene = ensure(onSelect); scene.update(result); },
-      getSelectedNode() { return controller?.getState?.().model?.nodes?.find((node) => node.id === controller.getState().selectedId)?.detail; }
-    };
-    window.dispatchEvent(new Event("flowscene-ready"));
-  </script>
+  <script type="module" src="bridge.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

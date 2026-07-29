@@ -67,8 +67,18 @@ test("the mission cockpit exposes the 3D thread, presets, decision delta, and ac
   for (const preset of ["baseline", "recover", "switch"]) {
     assert.match(html, new RegExp(`data-preset=["']${preset}["']`), `missing ${preset} preset`);
   }
-  assert.match(html, /scene\.js/);
+  assert.match(html, /bridge\.js/);
   assert.match(html, /type=["']module["']/);
+});
+
+test("the bridge is the module seam that wires the scene renderer to the cockpit", async () => {
+  const bridge = await readFile(new URL("../web/bridge.js", import.meta.url), "utf8");
+  assert.match(bridge, /import\s*\{[^}]*createDigitalThread[^}]*\}\s*from\s*["']\.\/scene\.js["']/);
+  assert.match(bridge, /window\.FlowScene\s*=/);
+  for (const method of ["setScenario", "update", "getSelectedNode"]) {
+    assert.match(bridge, new RegExp(`${method}\\s*\\(`), `bridge must expose ${method}`);
+  }
+  assert.match(bridge, /flowscene-ready/);
 });
 
 test("README carries the rehearsal story, digital thread, performance boundary, and exact gate", () => {

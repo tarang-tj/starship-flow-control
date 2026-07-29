@@ -7,6 +7,7 @@ export default [
       globals: {
         document: "readonly",
         window: "readonly",
+        Event: "readonly",
         fetch: "readonly",
         structuredClone: "readonly",
         console: "readonly",
