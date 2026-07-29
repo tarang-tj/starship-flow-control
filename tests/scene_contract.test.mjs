@@ -81,6 +81,8 @@ test("canvas controller exposes integration API, selection callbacks, invalidati
   assert.equal(controller.getState().selectedId, "ENGINE");
   assert.equal(controller.getState().reducedMotion, true);
   assert.equal(controller.getState().pixelRatio, 2);
+  assert.equal(canvas.style.width, undefined, "renderer must not freeze the responsive CSS width inline");
+  assert.equal(canvas.style.height, undefined, "renderer must not freeze the responsive CSS height inline");
   assert.ok(calls.requested > 0);
   assert.equal(calls.observed, 1);
   controller.dispose();

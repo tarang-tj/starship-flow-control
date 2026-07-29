@@ -145,6 +145,9 @@ function beforeAfter(result) {
   const readyDelta = after.ready - before.ready;
   const gapDelta = after.gap - before.gap;
   const signed = (value) => `${value >= 0 ? "+" : ""}${value}`;
+  if (readyDelta === 0 && gapDelta === 0) {
+    return `Baseline reference: ${after.ready} of ${after.target} builds ready; gap ${after.gap}. Change a recovery input to compare the decision.`;
+  }
   return `Before → after: ready ${before.ready} → ${after.ready} (${signed(readyDelta)}); gap ${before.gap} → ${after.gap} (${signed(gapDelta)}).`;
 }
 
@@ -217,8 +220,8 @@ function renderOrders(result) {
 function renderScene(result, inputs) {
   const scene = window.FlowScene;
   const payload = {result, inputs, onSelect: renderSelectedNode};
-  scene?.setScenario?.(payload);
-  scene?.update?.(payload);
+  if (scene?.setScenario) scene.setScenario(payload);
+  else scene?.update?.(payload);
   const selected = scene?.getSelectedNode?.();
   if (selected) renderSelectedNode(selected);
 }
@@ -228,7 +231,10 @@ function renderSelectedNode(node) {
   if (!selectedNodeDetail || !node) return;
   const name = node.name || node.id || "Synthetic component";
   const detail = node.detail || node.status || "No additional synthetic detail.";
-  selectedNodeDetail.textContent = `${name}: ${detail}`;
+  const narrative = typeof detail === "object"
+    ? `${detail.status}; readiness ${detail.readiness}; shortage ${detail.shortage} units; ${detail.action}`
+    : detail;
+  selectedNodeDetail.textContent = `${name}: ${narrative}`;
 }
 
 function render(result, inputs) {
@@ -285,11 +291,18 @@ $("tileArrival").addEventListener("input", schedulePreview);
 $("engineStock").addEventListener("input", schedulePreview);
 $("runBtn").addEventListener("click", runScenario);
 $("resetBtn").addEventListener("click", reset);
+document.querySelectorAll("[data-preset]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const preset = PRESETS[button.dataset.preset];
+    if (preset) setPreset(preset);
+  });
+});
 const dialog = $("methodDialog");
 $("aboutBtn").addEventListener("click", () => dialog.showModal());
 dialog.querySelector(".dialog-close").addEventListener("click", () => dialog.close());
 
 window.FlowApp = Object.freeze({evaluate, presets: PRESETS, setPreset, renderSelectedNode});
+window.addEventListener("flowscene-ready", runScenario);
 
 boot().catch((error) => {
   const list = $("constraintList");

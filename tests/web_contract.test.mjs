@@ -60,6 +60,17 @@ test("dynamic fixture rendering uses DOM text APIs instead of HTML interpolation
   assert.match(app, /textContent/);
 });
 
+test("the mission cockpit exposes the 3D thread, presets, decision delta, and accessible fallback", () => {
+  for (const id of ["sceneCanvas", "sceneStatus", "sceneFallback", "selectedNodeDetail", "beforeAfter", "recommendation", "statusAnnouncement"]) {
+    assert.match(html, new RegExp(`id=["']${id}["']`), `missing #${id}`);
+  }
+  for (const preset of ["baseline", "recover", "switch"]) {
+    assert.match(html, new RegExp(`data-preset=["']${preset}["']`), `missing ${preset} preset`);
+  }
+  assert.match(html, /scene\.js/);
+  assert.match(html, /type=["']module["']/);
+});
+
 test("README carries the rehearsal story, digital thread, performance boundary, and exact gate", () => {
   return readFile(new URL("../README.md", import.meta.url), "utf8").then((readme) => {
     assert.match(readme, /60-second demo/i);

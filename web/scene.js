@@ -108,13 +108,12 @@ export function createDigitalThread(canvas, options = {}) {
     const height = Math.max(1, Math.round((bounds.height || 420) * pixelRatio));
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width; canvas.height = height;
-      if (canvas.style) { canvas.style.width = `${bounds.width || 640}px`; canvas.style.height = `${bounds.height || 420}px`; }
     }
     invalidate();
   }
 
   function project(node, width, height) {
-    const scale = Math.min(width / 580, height / 410);
+    const scale = Math.min(width / 680, height / 500);
     return { ...node, sx: width / 2 + (node.x - node.z * 0.38) * scale, sy: height / 2 + (node.y + node.z * 0.2) * scale, radius: Math.max(13, 18 * scale) };
   }
 
@@ -123,7 +122,7 @@ export function createDigitalThread(canvas, options = {}) {
     if (!from || !to) return;
     context.beginPath(); context.moveTo(from.sx, from.sy); context.lineTo(to.sx, to.sy);
     context.lineWidth = link.active ? 5 : 1.5;
-    context.strokeStyle = link.active ? (model.state === "thermal" ? "#ff9f43" : "#6ee7ff") : "#435064";
+    context.strokeStyle = link.active ? "#70d7ff" : "#435064";
     context.setLineDash(link.active ? [] : [5, 7]); context.stroke(); context.setLineDash([]);
   }
 

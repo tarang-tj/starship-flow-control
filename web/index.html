@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="A synthetic multi-level BOM constraint and scenario-planning demonstration.">
+  <meta name="description" content="Explore an explainable synthetic multi-level BOM constraint path in an interactive operations cockpit.">
+  <meta name="theme-color" content="#090d0f">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <title>Flow Control — Synthetic Build Readiness</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,60 +15,94 @@
   <header class="topbar">
     <div class="identity">
       <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <div><strong>FLOW CONTROL</strong><small>BUILD READINESS / SYNTHETIC DEMO</small></div>
+      <div><strong>FLOW CONTROL</strong><small>DIGITAL THREAD / SYNTHETIC DEMO</small></div>
     </div>
     <div class="top-actions">
       <span class="status"><i></i> MODEL ONLINE</span>
+      <a class="text-button" href="https://github.com/tarang-tj/starship-flow-control">SOURCE</a>
       <button id="aboutBtn" class="text-button" type="button">METHOD</button>
     </div>
   </header>
 
   <main id="main">
-    <section class="mission-strip" aria-labelledby="mission-title">
-      <div>
+    <section class="hero" aria-labelledby="mission-title">
+      <div class="hero-copy">
         <p class="eyebrow">DECISION WINDOW / <span id="horizonLabel">21 DAYS</span></p>
-        <h1 id="mission-title">Find the constraint before<br>the build finds it.</h1>
-        <p class="lede">A deterministic multi-level BOM engine turns inventory, inbound orders, and lead times into one question: <em>what actually limits the plan?</em></p>
+        <h1 id="mission-title">Trace the part.<br><em>Protect the build.</em></h1>
+        <p class="lede">A deterministic multi-level BOM engine connects inventory and inbound timing to the integrated plan—then shows exactly which leaf component changes the decision.</p>
+        <div class="hero-proof" aria-label="Model boundaries">
+          <span>DETERMINISTIC</span><span>EXPLAINABLE</span><span>100% SYNTHETIC</span>
+        </div>
       </div>
-      <div class="scenario-controls" aria-label="Scenario controls">
+
+      <aside class="scenario-controls" aria-label="Scenario controls">
         <div class="control-heading"><span>SCENARIO LAB</span><b id="scenarioState">BASELINE</b></div>
+        <div class="preset-grid" aria-label="Scenario presets">
+          <button type="button" data-preset="baseline"><b>01</b><span>Baseline</span><small>thermal late</small></button>
+          <button type="button" data-preset="recover"><b>02</b><span>Recover</span><small>pull tiles in</small></button>
+          <button type="button" data-preset="switch"><b>03</b><span>Switch</span><small>stress engines</small></button>
+        </div>
         <label for="tileArrival">Thermal tile arrival day <output id="tileDayOut">34</output></label>
         <input id="tileArrival" type="range" min="7" max="45" value="34" step="1">
         <label for="engineStock">Engine assemblies on hand <output id="engineOut">25</output></label>
         <input id="engineStock" type="range" min="12" max="30" value="25" step="1">
         <div class="button-row">
-          <button id="runBtn" class="primary" type="button">RUN SCENARIO</button>
+          <button id="runBtn" class="primary" type="button">COMMIT SCENARIO</button>
           <button id="resetBtn" class="secondary" type="button">RESET</button>
         </div>
-      </div>
+      </aside>
     </section>
 
     <section class="metrics" aria-label="Readiness summary">
-      <article><span>READY / TARGET</span><strong><b id="readyBuilds">—</b><small> / <span id="targetBuilds">—</span></small></strong><p id="readinessNote">Loading deterministic model…</p></article>
-      <article><span>BUILD GAP</span><strong id="buildGap">—</strong><p>vehicles inside horizon</p></article>
+      <article class="readiness"><span>READY / TARGET</span><strong><b id="readyBuilds">—</b><small> / <span id="targetBuilds">—</span></small></strong><p id="readinessNote">Loading deterministic model…</p></article>
+      <article><span>BUILD GAP</span><strong id="buildGap">—</strong><p>integrated vehicles</p></article>
       <article><span>ACTIVE CONSTRAINTS</span><strong id="constraintCount">—</strong><p>leaf-level shortages</p></article>
       <article><span>SHORTAGE VALUE</span><strong id="riskValue">—</strong><p>synthetic unit cost</p></article>
     </section>
 
+    <section class="thread-stage" aria-labelledby="thread-title">
+      <header class="stage-header">
+        <div><p class="eyebrow">01 / CAUSAL MODEL</p><h2 id="thread-title">Interactive digital thread</h2></div>
+        <div class="stage-legend" aria-label="Diagram legend"><span><i class="nominal"></i>Nominal</span><span><i class="path"></i>Constraint path</span><span><i class="limiting"></i>Limiting leaf</span></div>
+      </header>
+      <div class="scene-layout">
+        <div class="scene-shell">
+          <canvas id="sceneCanvas" aria-describedby="sceneHelp sceneFallback"></canvas>
+          <div class="scene-hud" aria-hidden="true"><span>EXPLODED BOM / ISOMETRIC</span><span id="sceneStatus">AWAITING MODEL</span></div>
+          <p id="sceneHelp" class="scene-help">Select a node or use arrow keys; press Enter to inspect the selected component.</p>
+          <p id="sceneFallback" class="scene-fallback" hidden>If the canvas is unavailable, use the critical-path list and exception queue below.</p>
+        </div>
+        <aside class="decision-brief">
+          <p class="eyebrow">OPERATOR READOUT</p>
+          <h3>What changed—and what earns action.</h3>
+          <p id="beforeAfter">Baseline reference: calculating readiness and build gap…</p>
+          <p id="recommendation">Recommendation: evaluating the limiting path…</p>
+          <div class="selected-node"><span>SELECTED NODE</span><p id="selectedNodeDetail">Loading synthetic component detail…</p></div>
+          <div class="hand-calc"><span>HAND-CALCULABLE</span><code>parent builds = min(child supply ÷ qty per parent)</code></div>
+        </aside>
+      </div>
+      <div id="statusAnnouncement" class="sr-only" role="status" aria-live="polite"></div>
+    </section>
+
     <section class="workspace">
       <div class="panel constraint-panel">
-        <header><div><p class="eyebrow">01 / EXCEPTION QUEUE</p><h2>Constraint radar</h2></div><span class="live-label">RANKED BY IMPACT</span></header>
+        <header><div><p class="eyebrow">02 / EXCEPTION QUEUE</p><h2>Constraint radar</h2></div><span class="live-label">RANKED BY IMPACT</span></header>
         <p class="score-key">PRIORITY SCORE / BUILD GAP + TIMING + LEAD-TIME EXPOSURE</p>
         <div id="constraintList" class="constraint-list" aria-live="polite"></div>
       </div>
 
       <div class="panel path-panel">
-        <header><div><p class="eyebrow">02 / PROPAGATION</p><h2>Critical path</h2></div><span id="pathBadge" class="live-label">—</span></header>
+        <header><div><p class="eyebrow">03 / PROPAGATION</p><h2>Critical path</h2></div><span id="pathBadge" class="live-label">—</span></header>
         <div id="criticalPath" class="critical-path"></div>
         <div class="logic-note">
-          <span>ENGINE LOGIC</span>
-          <p>For each assembly, available builds equal the minimum child availability divided by quantity-per-parent. Constraints propagate upward; no model-generated guess overrides the arithmetic.</p>
+          <span>WHY THIS MATTERS</span>
+          <p>A late order is not automatically the constraint. Supply is propagated through quantity-per-parent until the actual integrated-build consequence is visible.</p>
         </div>
       </div>
     </section>
 
     <section class="panel orders-panel">
-      <header><div><p class="eyebrow">03 / RECOVERY TIMING</p><h2>Inbound order board</h2></div><span class="live-label">HORIZON-AWARE</span></header>
+      <header><div><p class="eyebrow">04 / RECOVERY TIMING</p><h2>Inbound order board</h2></div><span class="live-label">HORIZON-AWARE</span></header>
       <div class="table-wrap">
         <table>
           <thead><tr><th>ORDER</th><th>COMPONENT</th><th>QTY</th><th>ARRIVAL</th><th>CONFIDENCE</th><th>PLAN STATUS</th></tr></thead>
@@ -102,6 +138,26 @@
       <section><h3>Why deterministic</h3><p>Inventory arithmetic is consequential. Explainable constraints and fault-tested validation matter more here than generative output.</p></section>
     </div>
   </dialog>
+  <script type="module">
+    import { createDigitalThread } from "./scene.js";
+    const canvas = document.getElementById("sceneCanvas");
+    const status = document.getElementById("sceneStatus");
+    const fallback = document.getElementById("sceneFallback");
+    let controller;
+    const ensure = (onSelect) => {
+      if (!controller) controller = createDigitalThread(canvas, {
+        onSelect,
+        onError: (error) => { status.textContent = "CANVAS FALLBACK"; fallback.hidden = false; console.error(error); }
+      });
+      return controller;
+    };
+    window.FlowScene = {
+      setScenario({result, onSelect}) { const scene = ensure(onSelect); scene.update(result); status.textContent = result.summary.gap ? "CONSTRAINT ACTIVE" : "PLAN CLEAR"; },
+      update({result, onSelect}) { const scene = ensure(onSelect); scene.update(result); },
+      getSelectedNode() { return controller?.getState?.().model?.nodes?.find((node) => node.id === controller.getState().selectedId)?.detail; }
+    };
+    window.dispatchEvent(new Event("flowscene-ready"));
+  </script>
   <script src="app.js"></script>
 </body>
 </html>
