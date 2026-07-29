@@ -39,6 +39,20 @@ try {
     assert.equal(await page.locator("#readyBuilds").textContent(), "4");
     await page.locator('[data-preset="switch"]').click();
     assert.match(await page.locator("#criticalPath").textContent(), /engine/i);
+    // Integration ground truth: the shell's vehicle-view controls must reach a
+    // LIVE renderer through the bridge. Every one of these is a no-op that still
+    // renders and still passes lint if the seam is not actually wired, so assert
+    // the returned state rather than the button's aria-pressed attribute.
+    const exploded = await page.evaluate(() => window.FlowScene?.setLayout?.({ mode: "exploded", amount: 0.65 }));
+    assert.equal(exploded, true, "vehicle-view control did not reach a live renderer");
+    const integrated = await page.evaluate(() => window.FlowScene?.setLayout?.({ mode: "integrated", amount: 0 }));
+    assert.equal(integrated, false, "vehicle-view control did not reseat the integrated layout");
+
+    const before = await page.locator("#selectedNodeDetail").textContent();
+    await page.locator('[data-scene-node="PROP-MODULE"]').click();
+    const after = await page.locator("#selectedNodeDetail").textContent();
+    assert.notEqual(after, before, "selecting a subsystem did not update the readout");
+
     const layout = await page.evaluate(() => ({
       viewport: window.innerWidth,
       scroll: document.documentElement.scrollWidth,

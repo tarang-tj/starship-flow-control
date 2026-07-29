@@ -76,7 +76,7 @@ test("canvas controller exposes integration API, selection callbacks, invalidati
 
   assert.deepEqual(
     Object.keys(controller).sort(),
-    ["dispose", "focusNext", "getState", "invalidate", "selectNode", "setExploded", "update"].sort(),
+    ["dispose", "focusNext", "getState", "invalidate", "selectNode", "setExploded", "setExplodeAmount", "update"].sort(),
   );
   controller.update(scenario(["VEHICLE", "PROP-MODULE", "ENGINE"], 2));
   controller.selectNode("ENGINE");
@@ -230,4 +230,28 @@ test("update accepts an exploded option and disposal tears down every listener",
   assert.equal(rig.listeners.size, 0, "every listener must be removed");
   assert.equal(rig.calls.disconnected, 1, "the resize observer must be disconnected");
   assert.deepEqual(rig.calls.errors, []);
+});
+
+test("continuous separation holds partial states and is never stranded by a later toggle", () => {
+  const rig = harness({ reducedMotion: true });
+  rig.controller.update(scenario(["VEHICLE", "HEAT-SHIELD", "TPS-TILE"]));
+  rig.pump();
+
+  assert.equal(rig.controller.setExplodeAmount(0.4), 0.4);
+  assert.equal(rig.controller.getState().explodeAmount, 0.4, "the slider must reach partial separation, not snap");
+  assert.equal(rig.controller.getState().exploded, false, "below the midpoint still reads as integrated");
+
+  // The regression this guards: a partial separation leaves `exploded` false, so
+  // a boolean toggle back to false used to early-return on the unchanged flag and
+  // strand the vehicle half apart.
+  rig.controller.setExploded(false);
+  assert.equal(rig.controller.getState().explodeAmount, 0, "toggling integrated must fully reseat a partial separation");
+
+  assert.equal(rig.controller.setExplodeAmount(2), 1, "out-of-range input must clamp");
+  assert.equal(rig.controller.getState().explodeAmount, 1);
+  assert.equal(rig.controller.getState().exploded, true, "above the midpoint reads as exploded");
+
+  assert.equal(rig.controller.setExplodeAmount("nonsense"), 0, "non-numeric input must fall back to integrated");
+  assert.deepEqual(rig.calls.errors, []);
+  rig.controller.dispose();
 });

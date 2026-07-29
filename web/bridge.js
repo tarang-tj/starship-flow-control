@@ -37,6 +37,20 @@ window.FlowScene = {
     const state = controller?.getState?.();
     return state?.model?.nodes?.find((node) => node.id === state.selectedId)?.detail;
   },
+  // Vehicle-view pass-throughs. The shell owns the controls, the renderer owns
+  // the geometry, and neither may reach past this seam. Every call is a no-op
+  // until a scenario has run and built the controller.
+  setLayout({ mode, amount } = {}) {
+    if (!controller) return false;
+    if (typeof amount === "number") return controller.setExplodeAmount(amount) > 0.5;
+    return controller.setExploded(mode === "exploded");
+  },
+  setExplode(amount) {
+    return controller ? controller.setExplodeAmount(amount) : 0;
+  },
+  selectNode(partId) {
+    return controller ? controller.selectNode(partId) : undefined;
+  },
 };
 
 window.dispatchEvent(new Event("flowscene-ready"));

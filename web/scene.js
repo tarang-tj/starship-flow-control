@@ -887,7 +887,7 @@ function unavailableController(error, onError) {
   onError(error);
   return {
     update() {}, invalidate() {}, selectNode() { return false; }, focusNext() { return false; },
-    setExploded() { return false; }, dispose() {},
+    setExploded() { return false; }, setExplodeAmount() { return 0; }, dispose() {},
     getState: () => ({ available: false, error, model: null, selectedId: null, reducedMotion: false, pixelRatio: 1, exploded: false }),
   };
 }
@@ -941,6 +941,7 @@ export function createDigitalThread(canvas, options = {}) {
   let disposed = false;
   let exploded = false;
   let explode = 0;
+  let explodeTarget = 0;
   let explodeFrom = 0;
   let explodeStart = 0;
   let explodeFrames = 0;
@@ -957,7 +958,7 @@ export function createDigitalThread(canvas, options = {}) {
   function render() {
     frame = null;
     if (disposed) return;
-    const target = exploded ? 1 : 0;
+    const target = explodeTarget;
     let running = false;
     if (explode !== target) {
       explodeFrames += 1;
@@ -1000,12 +1001,15 @@ export function createDigitalThread(canvas, options = {}) {
     return selectNode(model.nodes[(index + direction + model.nodes.length) % model.nodes.length].id);
   }
 
-  function setExploded(next) {
-    const value = Boolean(next);
-    if (value === exploded) return exploded;
-    exploded = value;
+  // Both the boolean toggle and the continuous separation slider funnel through
+  // one applier so a partial separation cannot be stranded by a later toggle
+  // that happens to match the current boolean state.
+  function applyExplode(target, flag) {
+    exploded = flag;
+    if (target === explodeTarget) return exploded;
+    explodeTarget = target;
     if (reducedMotion) {
-      explode = value ? 1 : 0;
+      explode = target;
     } else {
       explodeFrom = explode;
       explodeStart = now();
@@ -1013,6 +1017,17 @@ export function createDigitalThread(canvas, options = {}) {
     }
     invalidate();
     return exploded;
+  }
+
+  function setExploded(next) {
+    const value = Boolean(next);
+    return applyExplode(value ? 1 : 0, value);
+  }
+
+  function setExplodeAmount(value) {
+    const amount = Math.min(1, Math.max(0, Number(value) || 0));
+    applyExplode(amount, amount > 0.5);
+    return amount;
   }
 
   function point(event) {
@@ -1088,6 +1103,7 @@ export function createDigitalThread(canvas, options = {}) {
     selectNode,
     focusNext,
     setExploded,
+    setExplodeAmount,
     getState: () => ({
       available: true, model, selectedId, hoveredId, reducedMotion, pixelRatio,
       exploded, explodeAmount: explode, renderer: renderer.kind,
