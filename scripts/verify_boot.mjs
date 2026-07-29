@@ -26,7 +26,7 @@ const port = server.address().port;
 
 // Fraction of the vehicle column that must come back brighter than BRIGHT for
 // the launch vehicle to count as rasterised. Measured in this headless
-// Chromium: 12% (desktop) and 24% (mobile) with the mesh drawn, 0.5% and 1.1%
+// Chromium: 12% (desktop) and 24% (mobile) with the mesh drawn, 0.74% and 1.1%
 // with the mesh draw call removed, so the bar sits an order of magnitude clear
 // of a dead renderer and half an order below a live one.
 const BRIGHT = 0.30;
@@ -172,6 +172,33 @@ try {
     assert.equal(
       await page.evaluate(() => window.__layoutEvents.at(-1).selectedId), "PROP-MODULE",
       `${label}: the renderer did not announce the selection`,
+    );
+
+    // Renderer-ORIGINATED change. Nothing in the shell caused this, so the
+    // controls can only be correct if they repaint from onVehicleChange rather
+    // than from their own intent. A shell that mirrors its own clicks passes
+    // every assertion above and fails here — which is exactly how the three
+    // desyncs shipped in the first place.
+    await page.locator("#sceneCanvas").focus();
+    await page.keyboard.press("x");
+    await settle(
+      page, () => window.FlowScene.getVehicleState().explodeTarget === 0,
+      `${label}: the keyboard shortcut never reached the renderer`,
+    );
+    const echoed = await page.evaluate(() => ({
+      target: window.FlowScene.getVehicleState().explodeTarget,
+      slider: document.querySelector("#explodeAmount")?.value,
+      readout: document.querySelector("#explodeOut")?.textContent,
+    }));
+    const expected = Math.round(echoed.target * 100);
+    assert.equal(
+      echoed.slider, String(expected),
+      `${label}: the separation slider did not follow a renderer-originated change `
+      + `(renderer ${expected}%, slider ${echoed.slider}%) — the shell is mirroring its own intent`,
+    );
+    assert.equal(
+      echoed.readout, `${expected}%`,
+      `${label}: the separation readout did not follow a renderer-originated change`,
     );
 
     const layout = await page.evaluate(() => ({

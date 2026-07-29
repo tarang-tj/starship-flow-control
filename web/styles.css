@@ -101,7 +101,9 @@ main{width:min(1440px,100%);margin:auto;padding:0 var(--gutter) var(--s8)}
 /* ---------- hero ---------- */
 .hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.6fr);gap:clamp(32px,6vw,88px);align-items:center;
   border-bottom:1px solid var(--rule);padding:clamp(40px,6vw,76px) 0}
-.hero h1 em{color:transparent;-webkit-text-stroke:1px #9aa3a6;font-style:normal}
+/* Outlined second line. `color` is the fallback: an engine without
+   -webkit-text-fill-color paints the text solid instead of invisible. */
+.hero h1 em{color:#9aa3a6;-webkit-text-fill-color:transparent;-webkit-text-stroke:1px #9aa3a6;font-style:normal}
 .lede{max-width:62ch;color:var(--ink-2);font-size:clamp(15px,1.2vw,18px);line-height:1.7;margin:var(--s6) 0 var(--s5)}
 .hero-proof{display:flex;flex-wrap:wrap;gap:var(--s2);list-style:none;margin:0;padding:0}
 .hero-proof li{border:1px solid var(--rule-strong);color:var(--muted);padding:7px 10px;font-size:9px}

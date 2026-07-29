@@ -59,7 +59,7 @@ At each of the two viewports, against the real page served over HTTP:
 - The baseline renders on load: `#readyBuilds` reaches 3 with no click. Baseline is the initial state, so the probe verifies it rather than driving it from a preset button.
 - Clicking the recover preset yields 4 ready builds; clicking the switch preset moves the critical path to the engine assembly.
 - The renderer came up on WebGL, reported by the renderer itself through `getVehicleState()`, not inferred from the absence of a fallback message.
-- The vehicle actually reached the framebuffer: the probe reads back the drawing buffer and requires at least 5% of the vehicle column to be lit. Measured in this headless Chromium, that column comes back 12% lit (desktop) and 24% (mobile) with the mesh drawn, and 0.5% and 1.1% with the mesh draw call removed, so the floor sits an order of magnitude clear of a dead renderer.
+- The vehicle actually reached the framebuffer: the probe reads back the drawing buffer and requires at least 5% of the vehicle column to be lit. Measured in this headless Chromium, that column comes back 12% lit (desktop) and 24% (mobile) with the mesh drawn, and 0.74% and 1.1% with the mesh draw call removed, so the floor sits an order of magnitude clear of a dead renderer.
 - The exploded-view control moves state the renderer owns (separation target, then animated amount, then the layout event the renderer raises), not the button's own `aria-pressed` attribute. A disconnected control still sets its own attributes and still passes lint, so attributes prove nothing.
 - Clicking a subsystem button changes `#selectedNodeDetail` and the renderer reports the same selection back.
 - Zero console errors and zero page errors, at both viewports.
