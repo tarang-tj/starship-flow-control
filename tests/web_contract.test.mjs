@@ -44,13 +44,25 @@ test("the mission cockpit exposes the 3D thread, presets, decision delta, and ac
 });
 
 test("the bridge is the module seam that wires the scene renderer to the cockpit", async () => {
-  const bridge = await readFile(new URL("../web/bridge.js", import.meta.url), "utf8");
+  // Comments are stripped first: these are source-text assertions, and a regex
+  // that matches the prose describing the seam instead of the seam itself is the
+  // same class of unfailable test this suite just removed everywhere else.
+  const raw = await readFile(new URL("../web/bridge.js", import.meta.url), "utf8");
+  const bridge = raw.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+
   assert.match(bridge, /import\s*\{[^}]*createDigitalThread[^}]*\}\s*from\s*["']\.\/scene\.js["']/);
   assert.match(bridge, /window\.FlowScene\s*=/);
-  for (const method of ["setScenario", "update", "getSelectedNode"]) {
-    assert.match(bridge, new RegExp(`${method}\\s*\\(`), `bridge must expose ${method}`);
+  for (const method of ["setScenario", "update", "getSelectedNode", "setLayout", "selectNode", "getVehicleState", "onVehicleChange"]) {
+    assert.match(bridge, new RegExp(`\\b${method}\\s*[(:]`), `bridge must expose ${method}`);
   }
   assert.match(bridge, /flowscene-ready/);
+
+  // The seam must delegate, not reimplement: every vehicle method has to reach
+  // the controller. A bridge that answers from its own state is the placebo the
+  // boot probe caught once already.
+  for (const method of ["setExplodeAmount", "setExploded", "selectNode", "getState"]) {
+    assert.match(bridge, new RegExp(`controller\\s*\\??\\.\\s*${method}\\s*\\??\\.?\\s*\\(`), `bridge must delegate to controller.${method}`);
+  }
 });
 
 test("README carries the rehearsal story, digital thread, performance boundary, and exact gate", () => {
