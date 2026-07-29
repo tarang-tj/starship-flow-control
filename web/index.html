@@ -3,116 +3,198 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Explore an explainable synthetic multi-level BOM constraint path in an interactive operations cockpit.">
-  <meta name="theme-color" content="#090d0f">
+  <meta name="description" content="Independent portfolio demonstration: a deterministic, explainable multi-level bill-of-materials constraint model on fully synthetic data.">
+  <meta name="theme-color" content="#08090a">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <title>Flow Control — Synthetic Build Readiness</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <a class="skip" href="#main">Skip to operations view</a>
-  <div class="grain" aria-hidden="true"></div>
+  <a class="skip" href="#main">Skip to the operations view</a>
+
   <header class="topbar">
     <div class="identity">
       <span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <div><strong>FLOW CONTROL</strong><small>DIGITAL THREAD / SYNTHETIC DEMO</small></div>
+      <span class="identity-text">
+        <strong>Flow Control</strong>
+        <small>Digital thread · build readiness</small>
+      </span>
     </div>
+    <p class="disclosure-chip">Synthetic data · independent portfolio project · no SpaceX affiliation</p>
     <div class="top-actions">
-      <span class="status"><i></i> MODEL ONLINE</span>
-      <a class="text-button" href="https://github.com/tarang-tj/starship-flow-control">SOURCE</a>
-      <button id="aboutBtn" class="text-button" type="button">METHOD</button>
+      <span class="status"><i aria-hidden="true"></i> Model online</span>
+      <a class="text-button" href="https://github.com/tarang-tj/starship-flow-control">Source</a>
+      <button id="aboutBtn" class="text-button" type="button">Method</button>
     </div>
   </header>
 
   <main id="main">
     <section class="hero" aria-labelledby="mission-title">
       <div class="hero-copy">
-        <p class="eyebrow">DECISION WINDOW / <span id="horizonLabel">21 DAYS</span></p>
+        <p class="eyebrow">Decision window / <span id="horizonLabel">21 days</span></p>
         <h1 id="mission-title">Trace the part.<br><em>Protect the build.</em></h1>
-        <p class="lede">A deterministic multi-level BOM engine connects inventory and inbound timing to the integrated plan—then shows exactly which leaf component changes the decision.</p>
-        <div class="hero-proof" aria-label="Model boundaries">
-          <span>DETERMINISTIC</span><span>EXPLAINABLE</span><span>100% SYNTHETIC</span>
-        </div>
+        <p class="lede">A deterministic multi-level bill-of-materials engine connects on-hand inventory and inbound timing to the integrated plan, then shows exactly which leaf component changes the decision.</p>
+        <ul class="hero-proof" aria-label="Model boundaries">
+          <li>Deterministic</li>
+          <li>Explainable</li>
+          <li>100% synthetic</li>
+        </ul>
       </div>
 
-      <aside class="scenario-controls" aria-label="Scenario controls">
-        <div class="control-heading"><span>SCENARIO LAB</span><b id="scenarioState">BASELINE</b></div>
-        <div class="preset-grid" aria-label="Scenario presets">
+      <section class="scenario-controls" aria-labelledby="scenario-title">
+        <div class="control-heading">
+          <h2 id="scenario-title">Scenario lab</h2>
+          <b id="scenarioState">Baseline</b>
+        </div>
+        <div class="preset-grid" role="group" aria-label="Scenario presets">
           <button type="button" data-preset="baseline"><b>01</b><span>Baseline</span><small>thermal late</small></button>
           <button type="button" data-preset="recover"><b>02</b><span>Recover</span><small>pull tiles in</small></button>
           <button type="button" data-preset="switch"><b>03</b><span>Switch</span><small>stress engines</small></button>
         </div>
-        <label for="tileArrival">Thermal tile arrival day <output id="tileDayOut">34</output></label>
+        <label for="tileArrival">Thermal tile arrival day <output id="tileDayOut" for="tileArrival">34</output></label>
         <input id="tileArrival" type="range" min="7" max="45" value="34" step="1">
-        <label for="engineStock">Engine assemblies on hand <output id="engineOut">25</output></label>
+        <label for="engineStock">Engine assemblies on hand <output id="engineOut" for="engineStock">25</output></label>
         <input id="engineStock" type="range" min="12" max="30" value="25" step="1">
         <div class="button-row">
-          <button id="runBtn" class="primary" type="button">COMMIT SCENARIO</button>
-          <button id="resetBtn" class="secondary" type="button">RESET</button>
+          <button id="runBtn" class="primary" type="button">Commit scenario</button>
+          <button id="resetBtn" class="secondary" type="button">Reset</button>
         </div>
-      </aside>
+      </section>
     </section>
 
     <section class="metrics" aria-label="Readiness summary">
-      <article class="readiness"><span>READY / TARGET</span><strong><b id="readyBuilds">—</b><small> / <span id="targetBuilds">—</span></small></strong><p id="readinessNote">Loading deterministic model…</p></article>
-      <article><span>BUILD GAP</span><strong id="buildGap">—</strong><p>integrated vehicles</p></article>
-      <article><span>ACTIVE CONSTRAINTS</span><strong id="constraintCount">—</strong><p>leaf-level shortages</p></article>
-      <article><span>SHORTAGE VALUE</span><strong id="riskValue">—</strong><p>synthetic unit cost</p></article>
+      <article class="readiness">
+        <span>Ready / target</span>
+        <strong><b id="readyBuilds">—</b><small> / <span id="targetBuilds">—</span></small></strong>
+        <p id="readinessNote">Loading deterministic model…</p>
+      </article>
+      <article><span>Build gap</span><strong id="buildGap">—</strong><p>integrated vehicles</p></article>
+      <article><span>Active constraints</span><strong id="constraintCount">—</strong><p>leaf-level shortages</p></article>
+      <article><span>Shortage value</span><strong id="riskValue">—</strong><p>synthetic unit cost</p></article>
     </section>
 
     <section class="thread-stage" aria-labelledby="thread-title">
       <header class="stage-header">
-        <div><p class="eyebrow">01 / CAUSAL MODEL</p><h2 id="thread-title">Interactive digital thread</h2></div>
-        <div class="stage-legend" aria-label="Diagram legend"><span><i class="nominal"></i>Nominal</span><span><i class="path"></i>Constraint path</span><span><i class="limiting"></i>Limiting leaf</span></div>
-      </header>
-      <div class="scene-layout">
-        <div class="scene-shell">
-          <canvas id="sceneCanvas" aria-describedby="sceneHelp sceneFallback"></canvas>
-          <div class="scene-hud" aria-hidden="true"><span>EXPLODED BOM / ISOMETRIC</span><span id="sceneStatus">AWAITING MODEL</span></div>
-          <p id="sceneHelp" class="scene-help">Select a node or use arrow keys; press Enter to inspect the selected component.</p>
-          <p id="sceneFallback" class="scene-fallback" hidden>If the canvas is unavailable, use the critical-path list and exception queue below.</p>
+        <div>
+          <p class="eyebrow">01 / Causal model</p>
+          <h2 id="thread-title">Interactive digital thread</h2>
         </div>
-        <aside class="decision-brief">
-          <p class="eyebrow">OPERATOR READOUT</p>
-          <h3>What changed—and what earns action.</h3>
+        <ul class="stage-legend" aria-label="Diagram legend">
+          <li><i class="nominal" aria-hidden="true"></i>Nominal</li>
+          <li><i class="path" aria-hidden="true"></i>Constraint path</li>
+          <li><i class="limiting" aria-hidden="true"></i>Limiting leaf</li>
+        </ul>
+      </header>
+
+      <div class="scene-layout">
+        <div class="scene-column">
+          <div class="scene-hud">
+            <span>Vehicle model — isometric</span>
+            <span id="sceneStatus" class="hud-status">Awaiting model</span>
+          </div>
+          <div class="scene-shell">
+            <canvas id="sceneCanvas" tabindex="0" aria-describedby="sceneHelp sceneFallback"></canvas>
+            <p id="sceneFallback" class="scene-fallback" hidden>The 3D view is unavailable. Every number it shows is also in the critical-path list and exception queue below.</p>
+          </div>
+
+          <div class="vehicle-controls" aria-labelledby="vehicle-controls-title">
+            <div class="vc-head">
+              <h3 id="vehicle-controls-title">Vehicle view</h3>
+              <p>Presentation only. Nothing here changes the model result.</p>
+            </div>
+
+            <div class="vc-block">
+              <span class="vc-label" id="layoutModeLabel">Subsystem layout</span>
+              <div class="segmented" role="group" aria-labelledby="layoutModeLabel">
+                <button type="button" class="seg-btn" data-scene-layout="integrated" aria-pressed="true">Integrated</button>
+                <button type="button" class="seg-btn" data-scene-layout="exploded" aria-pressed="false">Exploded</button>
+              </div>
+            </div>
+
+            <div class="vc-block">
+              <label class="vc-label" for="explodeAmount">Separation <output id="explodeOut" for="explodeAmount">0%</output></label>
+              <input id="explodeAmount" type="range" min="0" max="100" step="5" value="0" data-scene-explode aria-describedby="explodeHint">
+              <p id="explodeHint" class="vc-hint">Pulls the assemblies apart along the stack axis so leaf components stay readable.</p>
+            </div>
+
+            <div class="vc-block vc-block-wide">
+              <span class="vc-label" id="subsystemLabel">Focus subsystem</span>
+              <div class="subsystem-picker" role="group" aria-labelledby="subsystemLabel">
+                <button type="button" data-scene-node="VEHICLE" aria-pressed="true"><b>00</b><span>Integrated stack</span></button>
+                <button type="button" data-scene-node="PROP-MODULE" aria-pressed="false"><b>01</b><span>Propulsion</span></button>
+                <button type="button" data-scene-node="HEAT-SHIELD" aria-pressed="false"><b>02</b><span>Thermal protection</span></button>
+                <button type="button" data-scene-node="AVIONICS" aria-pressed="false"><b>03</b><span>Avionics</span></button>
+              </div>
+              <p id="subsystemDetail" class="vc-detail" role="status">Integrated stack — three level-1 assemblies roll up to one vehicle. Select a subsystem to focus its branch of the thread.</p>
+            </div>
+          </div>
+
+          <p id="sceneHelp" class="scene-help">Click a node, or focus the diagram and use the arrow keys to move between components; press Enter to inspect the selected one.</p>
+
+          <details class="scene-text-alt">
+            <summary>Text description of the diagram</summary>
+            <p>The diagram draws a four-level synthetic bill of materials for one launch vehicle. The integrated vehicle consumes three level-1 assemblies: a propulsion module, a thermal protection set, and an avionics package. Propulsion consumes engine assemblies and cryogenic methane valves; thermal protection consumes protection tiles; avionics consumes flight computers.</p>
+            <p>The highlighted chain runs from the vehicle down to the single leaf component whose supply limits the build. That same chain is printed as text under <a href="#thread-title">Critical path</a>, the shortage and recommended action appear under Constraint radar, and the arrival dates driving it appear in the inbound order board. The diagram is a faster way to read the result, never the only way.</p>
+          </details>
+        </div>
+
+        <aside class="decision-brief" aria-labelledby="readout-title">
+          <p class="eyebrow">Operator readout</p>
+          <h3 id="readout-title">What changed, and what earns action</h3>
           <p id="beforeAfter">Baseline reference: calculating readiness and build gap…</p>
           <p id="recommendation">Recommendation: evaluating the limiting path…</p>
-          <div class="selected-node"><span>SELECTED NODE</span><p id="selectedNodeDetail">Loading synthetic component detail…</p></div>
-          <div class="hand-calc"><span>HAND-CALCULABLE</span><code>parent builds = min(child supply ÷ qty per parent)</code></div>
+          <div class="selected-node">
+            <span>Selected node</span>
+            <p id="selectedNodeDetail">Loading synthetic component detail…</p>
+          </div>
+          <div class="hand-calc">
+            <span>Hand-calculable</span>
+            <code>parent builds = min(child supply ÷ qty per parent)</code>
+          </div>
         </aside>
       </div>
       <div id="statusAnnouncement" class="sr-only" role="status" aria-live="polite"></div>
     </section>
 
     <section class="workspace">
-      <div class="panel constraint-panel">
-        <header><div><p class="eyebrow">02 / EXCEPTION QUEUE</p><h2>Constraint radar</h2></div><span class="live-label">RANKED BY IMPACT</span></header>
-        <p class="score-key">PRIORITY SCORE / BUILD GAP + TIMING + LEAD-TIME EXPOSURE</p>
+      <div class="panel constraint-panel" aria-labelledby="radar-title">
+        <header>
+          <div><p class="eyebrow">02 / Exception queue</p><h2 id="radar-title">Constraint radar</h2></div>
+          <span class="live-label">Ranked by impact</span>
+        </header>
+        <p class="score-key">Priority score = build gap + timing + lead-time exposure</p>
         <div id="constraintList" class="constraint-list" aria-live="polite"></div>
       </div>
 
-      <div class="panel path-panel">
-        <header><div><p class="eyebrow">03 / PROPAGATION</p><h2>Critical path</h2></div><span id="pathBadge" class="live-label">—</span></header>
+      <div class="panel path-panel" aria-labelledby="path-title">
+        <header>
+          <div><p class="eyebrow">03 / Propagation</p><h2 id="path-title">Critical path</h2></div>
+          <span id="pathBadge" class="live-label">—</span>
+        </header>
         <div id="criticalPath" class="critical-path"></div>
         <div class="logic-note">
-          <span>WHY THIS MATTERS</span>
+          <span>Why this matters</span>
           <p>A late order is not automatically the constraint. Supply is propagated through quantity-per-parent until the actual integrated-build consequence is visible.</p>
         </div>
       </div>
     </section>
 
-    <section class="panel orders-panel">
-      <header><div><p class="eyebrow">04 / RECOVERY TIMING</p><h2>Inbound order board</h2></div><span class="live-label">HORIZON-AWARE</span></header>
-      <div class="table-wrap">
+    <section class="panel orders-panel" aria-labelledby="orders-title">
+      <header>
+        <div><p class="eyebrow">04 / Recovery timing</p><h2 id="orders-title">Inbound order board</h2></div>
+        <span class="live-label">Horizon-aware</span>
+      </header>
+      <div class="table-wrap" tabindex="0" role="region" aria-labelledby="orders-title">
         <table>
-          <thead><tr><th>ORDER</th><th>COMPONENT</th><th>QTY</th><th>ARRIVAL</th><th>CONFIDENCE</th><th>PLAN STATUS</th></tr></thead>
+          <caption class="sr-only">Synthetic inbound purchase orders with arrival day, confidence, and horizon status.</caption>
+          <thead><tr><th scope="col">Order</th><th scope="col">Component</th><th scope="col">Qty</th><th scope="col">Arrival</th><th scope="col">Confidence</th><th scope="col">Plan status</th></tr></thead>
           <tbody id="ordersBody"></tbody>
         </table>
       </div>
     </section>
 
-    <section class="integrity-bar">
-      <div><p class="eyebrow">MODEL INTEGRITY</p><h2>Built to fail loudly.</h2></div>
+    <section class="integrity-bar" aria-labelledby="integrity-title">
+      <div><p class="eyebrow">Model integrity</p><h2 id="integrity-title">Built to fail loudly</h2></div>
       <ul>
         <li><b>6</b> deterministic tests</li>
         <li><b>0</b> hidden optimizers</li>
@@ -123,22 +205,24 @@
   </main>
 
   <footer>
-    <p><strong>INDEPENDENT PORTFOLIO DEMONSTRATION.</strong> Not affiliated with or endorsed by SpaceX. All quantities, components, costs, suppliers, lead times, and build structures are synthetic.</p>
+    <p><strong>Independent portfolio demonstration.</strong> Not affiliated with or endorsed by SpaceX. No logos, marks, imagery, CAD, or operational data of any company are used. All quantities, components, costs, suppliers, lead times, and build structures are synthetic and invented for this demo.</p>
     <p>Built by TJ Jammalamadaka · Python · deterministic BOM propagation · scenario analysis</p>
   </footer>
 
-  <dialog id="methodDialog">
+  <dialog id="methodDialog" aria-labelledby="method-title">
     <button class="dialog-close" type="button" aria-label="Close method dialog">×</button>
-    <p class="eyebrow">MODEL CARD</p>
-    <h2>What this proves—and what it does not.</h2>
+    <p class="eyebrow">Model card</p>
+    <h2 id="method-title">What this proves, and what it does not</h2>
     <div class="dialog-grid">
-      <section><h3>Inputs</h3><p>Multi-level bill of materials, on-hand inventory, inbound order dates, confidence, target builds, and planning horizon.</p></section>
+      <section><h3>Inputs</h3><p>Multi-level bill of materials, on-hand inventory, inbound order dates, confidence, target builds, and planning horizon. All synthetic.</p></section>
       <section><h3>Decision</h3><p>Surface leaf shortages, propagate the limiting path, rank recovery work, and compare scenarios without mutating the baseline.</p></section>
-      <section><h3>Boundaries</h3><p>No yield loss, supplier capacity, substitutions, partial assemblies, or production routing. Risk score prioritizes; it does not predict failure.</p></section>
+      <section><h3>Boundaries</h3><p>No yield loss, supplier capacity, substitutions, partial assemblies, or production routing. The risk score prioritizes; it does not predict failure.</p></section>
       <section><h3>Why deterministic</h3><p>Inventory arithmetic is consequential. Explainable constraints and fault-tested validation matter more here than generative output.</p></section>
     </div>
   </dialog>
+
   <script type="module" src="bridge.js"></script>
   <script src="app.js"></script>
+  <script src="shell.js"></script>
 </body>
 </html>
