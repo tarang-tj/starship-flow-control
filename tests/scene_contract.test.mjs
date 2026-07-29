@@ -74,7 +74,10 @@ test("canvas controller exposes integration API, selection callbacks, invalidati
     onError: (error) => calls.errors.push(error),
   });
 
-  assert.deepEqual(Object.keys(controller).sort(), ["dispose", "focusNext", "getState", "invalidate", "selectNode", "update"].sort());
+  assert.deepEqual(
+    Object.keys(controller).sort(),
+    ["dispose", "focusNext", "getState", "invalidate", "selectNode", "setExploded", "update"].sort(),
+  );
   controller.update(scenario(["VEHICLE", "PROP-MODULE", "ENGINE"], 2));
   controller.selectNode("ENGINE");
   assert.equal(calls.selected.at(-1).id, "ENGINE");
@@ -105,4 +108,126 @@ test("renderer is import-free and uses on-demand animation rather than a permane
   assert.match(source, /ResizeObserver/);
   assert.match(source, /prefers-reduced-motion/);
   assert.doesNotMatch(source, /function\s+animate|requestAnimationFrame\s*\(\s*animate/);
+});
+
+test("the renderer asks for real webgl with hand-written shaders and an explicit fallback chain", () => {
+  assert.match(source, /getContext\("webgl2"[\s\S]{0,120}getContext\("webgl"/, "must try webgl2 then webgl");
+  assert.match(source, /getContext\("2d"\)/, "must keep the 2d canvas fallback below webgl");
+  assert.match(source, /gl_Position\s*=/, "shaders must be hand-written GLSL, not a library");
+  assert.match(source, /gl_FragColor\s*=/);
+  assert.match(source, /COMPILE_STATUS/, "shader compilation must be checked");
+  assert.match(source, /LINK_STATUS/, "program linking must be checked");
+  assert.doesNotMatch(source, /https?:\/\/(?!127\.0\.0\.1)[^\s"')]*\.(?:js|glb|gltf|obj)/, "no CDN or external model files");
+  // Geometry is generated, not loaded: no fetch/XHR anywhere in the renderer.
+  assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest/);
+});
+
+// Harness for the controller with a fully injectable clock and frame scheduler.
+function harness({ reducedMotion = false, contexts = ["2d"] } = {}) {
+  const calls = { selected: [], errors: [], frames: 0, cancelled: 0, disconnected: 0 };
+  const listeners = new Map();
+  const context = new Proxy({}, { get: (target, key) => target[key] || (() => {}) });
+  const canvas = {
+    width: 0, height: 0, clientWidth: 800, clientHeight: 500, tabIndex: -1, style: {},
+    getContext: (kind) => (contexts.includes(kind) ? context : null),
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: 800, height: 500 }),
+    addEventListener: (type, fn) => listeners.set(type, fn),
+    removeEventListener: (type) => listeners.delete(type),
+    setAttribute() {},
+  };
+  let clock = 0;
+  let tick = 16;
+  const queue = [];
+  const environment = {
+    devicePixelRatio: 3,
+    performance: { now: () => clock },
+    requestAnimationFrame(fn) { calls.frames += 1; queue.push(fn); return calls.frames; },
+    cancelAnimationFrame() { calls.cancelled += 1; },
+    matchMedia: () => ({ matches: reducedMotion }),
+    ResizeObserver: class { constructor(fn) { this.fn = fn; } observe() {} disconnect() { calls.disconnected += 1; } },
+  };
+  const controller = scene.createDigitalThread(canvas, {
+    environment,
+    onSelect: (detail) => calls.selected.push(detail),
+    onError: (error) => calls.errors.push(error),
+  });
+  // Drain the queue the way a browser would: advance the clock one frame at a time.
+  const pump = (limit = 400) => {
+    let ran = 0;
+    while (queue.length && ran < limit) {
+      clock += tick;
+      queue.shift()();
+      ran += 1;
+    }
+    return ran;
+  };
+  const freezeClock = () => { tick = 0; };
+  return { calls, canvas, listeners, controller, pump, queue, freezeClock };
+}
+
+test("the exploded-view transition animates to completion and then stops requesting frames", () => {
+  const rig = harness();
+  rig.controller.update(scenario(["VEHICLE", "HEAT-SHIELD", "TPS-TILE"]));
+  rig.pump();
+  assert.equal(rig.controller.getState().exploded, false);
+  assert.equal(rig.controller.getState().explodeAmount, 0);
+
+  assert.equal(rig.controller.setExploded(true), true);
+  const frames = rig.pump();
+  assert.ok(frames > 4, `expected a real transition, got ${frames} frames`);
+  assert.ok(frames < 120, `transition must terminate promptly, took ${frames} frames`);
+  assert.equal(rig.queue.length, 0, "settled renderer must not leave a frame pending");
+  assert.equal(rig.controller.getState().explodeAmount, 1);
+
+  // Idle: nothing further may be scheduled once the transition has settled.
+  const before = rig.calls.frames;
+  rig.pump();
+  assert.equal(rig.calls.frames, before, "a settled renderer must not schedule more frames");
+
+  rig.controller.setExploded(false);
+  rig.pump();
+  assert.equal(rig.controller.getState().explodeAmount, 0);
+  assert.equal(rig.controller.getState().exploded, false);
+});
+
+test("the exploded transition still terminates when the host clock never advances", () => {
+  // A stalled clock keeps the eased value pinned below the target forever, so
+  // only the frame ceiling can stop the renderer re-scheduling itself.
+  const rig = harness();
+  rig.controller.update(scenario(["VEHICLE", "HEAT-SHIELD", "TPS-TILE"]));
+  rig.pump();
+  rig.freezeClock();
+  rig.controller.setExploded(true);
+  const frames = rig.pump(2000);
+  assert.ok(frames < 1500, `frozen clock must not spin forever, ran ${frames} frames`);
+  assert.equal(rig.queue.length, 0, "renderer must stop scheduling frames");
+  assert.equal(rig.controller.getState().explodeAmount, 1, "must land on the exploded layout anyway");
+});
+
+test("reduced motion snaps the exploded view instead of animating it", () => {
+  const rig = harness({ reducedMotion: true });
+  rig.controller.update(scenario(["VEHICLE", "PROP-MODULE", "ENGINE"], 2));
+  rig.pump();
+  const before = rig.calls.frames;
+  rig.controller.setExploded(true);
+  assert.equal(rig.controller.getState().explodeAmount, 1, "must jump straight to the exploded layout");
+  const frames = rig.pump();
+  assert.ok(frames <= 1, `reduced motion must not animate, ran ${frames} frames`);
+  assert.equal(rig.calls.frames - before, 1, "one repaint only");
+  assert.equal(rig.controller.getState().reducedMotion, true);
+});
+
+test("update accepts an exploded option and disposal tears down every listener", () => {
+  const rig = harness();
+  rig.controller.update(scenario(["VEHICLE", "HEAT-SHIELD", "TPS-TILE"]), { exploded: true });
+  rig.pump();
+  assert.equal(rig.controller.getState().exploded, true);
+  assert.equal(rig.controller.getState().pixelRatio, 2, "devicePixelRatio must stay capped at 2");
+  assert.equal(rig.canvas.style.width, undefined);
+  assert.equal(rig.canvas.style.height, undefined);
+  assert.ok(rig.listeners.size >= 4);
+  rig.controller.dispose();
+  assert.equal(rig.listeners.size, 0, "every listener must be removed");
+  assert.equal(rig.calls.disconnected, 1, "the resize observer must be disconnected");
+  assert.deepEqual(rig.calls.errors, []);
 });
