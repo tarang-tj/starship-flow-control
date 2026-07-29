@@ -1,7 +1,12 @@
 /* Flow Control — instrument-panel shell.
    Self-contained: system font stacks only, no external fonts, CDNs, or remote images.
    Palette: graphite instrument neutrals + a single warm ember accent.
-   Status hues (ok / danger) and the diagram legend swatches encode data, not decoration. */
+   Status hues (ok / danger) and the diagram legend swatches encode data, not decoration.
+
+   Contrast floor: every text token is chosen so that its measured WCAG 2.1
+   ratio against the surface it actually sits on is at least 4.5:1, including
+   the small mono labels. --dim is the quietest text tone and is verified
+   against --panel-2, the lightest surface it appears on. */
 
 :root{
   /* surfaces */
@@ -16,7 +21,9 @@
   --ink:#e9ebeb;
   --ink-2:#b4babc;
   --muted:#868e92;
-  --dim:#5e6669;
+  /* Quietest text tone. 4.88:1 on --panel-2, 5.29:1 on --bg. Do not darken it
+     past ~#7c858a without re-measuring: every 7-10px label uses it. */
+  --dim:#7c858a;
   /* single warm accent */
   --accent:#e2542a;
   --accent-soft:rgba(226,84,42,.10);
@@ -24,10 +31,18 @@
   /* semantic status */
   --ok:#8dab84;
   --danger:#d4614a;
-  /* legend swatches — mirror the canvas renderer */
-  --node-nominal:#425269;
-  --node-path:#70d7ff;
-  --node-limiting:#ff695e;
+  /* Legend swatches. These are copied from web/scene.js, not invented here: the
+     renderer draws ONE warm accent for the whole constraint chain, dimmed along
+     the path and at full strength on the limiting leaf. There is no second hue
+     for the limiting leaf and no cool colour anywhere except "plan clear".
+     scene.js: nominal fill #22303f + STEEL_CSS #93a4b8 outline, path #8a5a33,
+     ACCENT_CSS #ff8530, CLEAR_CSS #6be0a9. Changing one side without the other
+     makes the key lie about the picture. */
+  --node-nominal:#22303f;
+  --node-outline:#93a4b8;
+  --node-path:#8a5a33;
+  --node-limiting:#ff8530;
+  --node-clear:#6be0a9;
   /* focus */
   --focus:#f4f6f6;
   /* type stacks */
@@ -73,7 +88,7 @@ h3{margin:0}
 .mark i:nth-child(1){width:28px}
 .mark i:nth-child(2){width:21px;margin-left:5px}
 .mark i:nth-child(3){width:14px;margin-left:10px;background:var(--accent)}
-.disclosure-chip{justify-self:center;margin:0;padding:6px 10px;border:1px solid var(--rule-strong);color:var(--ink-2);font-size:9px;line-height:1.5;letter-spacing:.11em}
+.disclosure-chip{justify-self:center;margin:0;padding:6px 10px;border:1px solid var(--rule-strong);color:var(--ink-2);font-size:10px;line-height:1.5;letter-spacing:.11em}
 .top-actions{display:flex;align-items:center;gap:var(--s5);justify-self:end}
 .status{font-size:9px;color:var(--muted);white-space:nowrap}
 .status i{width:6px;height:6px;display:inline-block;background:var(--ok);border-radius:50%;margin-right:7px;vertical-align:middle}
@@ -129,12 +144,19 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;min-heigh
 .thread-stage{padding:var(--s8) 0;border-bottom:1px solid var(--rule)}
 .stage-header,.panel>header{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s5)}
 .stage-header{margin-bottom:var(--s5)}
-.stage-legend{display:flex;gap:var(--s5);flex-wrap:wrap;list-style:none;margin:0;padding:0;font-size:9px;color:var(--muted)}
+.legend-block{display:flex;flex-direction:column;gap:var(--s2);max-width:46ch}
+/* The note is load-bearing, not decoration: without it two intensities of one
+   accent read as two separate colour codes. */
+.legend-note{margin:0;color:var(--dim);font:400 10px/1.5 var(--mono);letter-spacing:.03em}
+.stage-legend{display:flex;gap:var(--s4);flex-wrap:wrap;list-style:none;margin:0;padding:0;font-size:10px;color:var(--muted)}
 .stage-legend li{display:flex;align-items:center;gap:7px}
-.stage-legend i{width:8px;height:8px;display:block;border-radius:50%}
-.stage-legend .nominal{background:var(--node-nominal)}
+/* The nominal swatch carries the renderer's dark fill plus its steel outline,
+   because that is exactly how an off-path marker is drawn on the canvas. */
+.stage-legend i{width:9px;height:9px;display:block;border-radius:50%;border:1px solid transparent}
+.stage-legend .nominal{background:var(--node-nominal);border-color:var(--node-outline)}
 .stage-legend .path{background:var(--node-path)}
 .stage-legend .limiting{background:var(--node-limiting)}
+.stage-legend .clear{background:var(--node-clear)}
 .scene-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.62fr);border:1px solid var(--rule-strong);background:var(--panel)}
 .scene-column{min-width:0;display:flex;flex-direction:column}
 .scene-shell{position:relative;min-width:0;background:var(--well);border-bottom:1px solid var(--rule);overflow:hidden}
@@ -172,7 +194,10 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;min-heigh
 .subsystem-picker button b{color:var(--dim);font-size:8px;letter-spacing:.1em}
 .subsystem-picker button span{font:600 10px var(--mono);letter-spacing:.06em;text-transform:uppercase}
 .subsystem-picker button[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);background:var(--accent-soft)}
-.subsystem-picker button[aria-pressed="true"] b{color:var(--accent)}
+/* The pressed tint lightens the button, which drops accent-on-tint to 4.41:1.
+   The index switches to --ink (13.7:1); selection is still signalled by the
+   accent border and background, not by colour alone. */
+.subsystem-picker button[aria-pressed="true"] b{color:var(--ink)}
 .vc-detail{margin:var(--s3) 0 0;padding-left:var(--s3);border-left:2px solid var(--accent);color:var(--ink-2);font-size:12px;line-height:1.6}
 .scene-help{margin:0;padding:var(--s4) var(--s5);color:var(--dim);font:400 10px/1.6 var(--mono);letter-spacing:.04em}
 .scene-text-alt{border-top:1px solid var(--rule);padding:var(--s4) var(--s5) var(--s5);margin-top:auto}
@@ -209,7 +234,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;min-heigh
 .impact{text-align:right}
 .impact b,.impact span{display:block}
 .impact b{font:600 24px var(--sans);color:var(--danger);font-variant-numeric:tabular-nums}
-.impact span{font:500 7px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.impact span{font:500 8px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .empty{padding:var(--s6) 0;border-top:1px solid var(--rule)}
 .empty b{font:600 22px var(--sans);text-transform:uppercase;color:var(--ok)}
 .empty p{color:var(--muted);font-size:12px}
@@ -220,7 +245,7 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;min-heigh
 .path-node:last-child::before{background:var(--node-limiting)}
 .path-node b,.path-node span{display:block}
 .path-node b{font:600 16px var(--sans);text-transform:uppercase;letter-spacing:-.005em}
-.path-node span{font:500 7px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.path-node span{font:500 8px var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-top:3px}
 .logic-note{margin-top:var(--s5);padding:var(--s5);border:1px solid var(--rule);background:var(--well)}
 .logic-note span{color:var(--muted);font-size:8px}
 .logic-note p{color:var(--ink-2);font-size:11px;line-height:1.7;margin:var(--s2) 0 0}
@@ -241,9 +266,12 @@ td:first-child{font-family:var(--mono);color:var(--muted)}
 .integrity-bar ul{display:flex;list-style:none;margin:0;padding:0}
 .integrity-bar li{border-left:1px solid var(--rule);padding:0 var(--s5);color:var(--muted);font-size:10px}
 .integrity-bar li b{display:block;color:var(--ink);font:600 22px var(--sans);font-variant-numeric:tabular-nums}
-footer{border-top:1px solid var(--rule);padding:var(--s6) var(--gutter);display:flex;justify-content:space-between;gap:var(--s6);color:var(--dim);font:400 10px/1.8 var(--mono);letter-spacing:.02em}
+footer{border-top:1px solid var(--rule);padding:var(--s6) var(--gutter);display:flex;justify-content:space-between;gap:var(--s6);color:var(--dim);font:400 11px/1.8 var(--mono);letter-spacing:.02em}
 footer p{max-width:80ch;margin:0}
-footer strong{color:var(--ink-2)}
+/* Highest-consequence text on the page. It is held at --ink-2 and 12px so the
+   non-affiliation statement is never the quietest thing in the footer. */
+.footer-disclosure{color:var(--ink-2);font-size:12px}
+footer strong{color:var(--ink)}
 
 /* ---------- method dialog ---------- */
 dialog{width:min(820px,calc(100% - 24px));background:var(--panel-2);color:var(--ink);border:1px solid var(--rule-strong);padding:var(--s7);box-shadow:0 30px 90px rgba(0,0,0,.7)}

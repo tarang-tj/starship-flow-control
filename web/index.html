@@ -79,11 +79,18 @@
           <p class="eyebrow">01 / Causal model</p>
           <h2 id="thread-title">Interactive digital thread</h2>
         </div>
-        <ul class="stage-legend" aria-label="Diagram legend">
-          <li><i class="nominal" aria-hidden="true"></i>Nominal</li>
-          <li><i class="path" aria-hidden="true"></i>Constraint path</li>
-          <li><i class="limiting" aria-hidden="true"></i>Limiting leaf</li>
-        </ul>
+        <!-- Swatches and wording mirror web/scene.js exactly: one warm accent
+             carries the whole constraint chain, dimmed along the path and full
+             strength on the limiting leaf. Do not imply a second hue. -->
+        <div class="legend-block">
+          <ul class="stage-legend" aria-label="Diagram legend">
+            <li><i class="nominal" aria-hidden="true"></i>Nominal</li>
+            <li><i class="path" aria-hidden="true"></i>Constraint path</li>
+            <li><i class="limiting" aria-hidden="true"></i>Limiting leaf</li>
+            <li><i class="clear" aria-hidden="true"></i>Plan clear</li>
+          </ul>
+          <p class="legend-note">One accent carries the whole chain: dimmed along the path, full strength on the limiting leaf. Green appears only when the build gap is zero.</p>
+        </div>
       </header>
 
       <div class="scene-layout">
@@ -105,6 +112,8 @@
 
             <div class="vc-block">
               <span class="vc-label" id="layoutModeLabel">Subsystem layout</span>
+              <!-- Accurate at first paint (the renderer boots unexploded) and
+                   re-derived from renderer state by shell.js from then on. -->
               <div class="segmented" role="group" aria-labelledby="layoutModeLabel">
                 <button type="button" class="seg-btn" data-scene-layout="integrated" aria-pressed="true">Integrated</button>
                 <button type="button" class="seg-btn" data-scene-layout="exploded" aria-pressed="false">Exploded</button>
@@ -114,22 +123,26 @@
             <div class="vc-block">
               <label class="vc-label" for="explodeAmount">Separation <output id="explodeOut" for="explodeAmount">0%</output></label>
               <input id="explodeAmount" type="range" min="0" max="100" step="5" value="0" data-scene-explode aria-describedby="explodeHint">
-              <p id="explodeHint" class="vc-hint">Pulls the assemblies apart along the stack axis so leaf components stay readable.</p>
+              <p id="explodeHint" class="vc-hint">Pulls the assemblies apart along the stack axis so leaf components stay readable. The renderer counts the stack as exploded past the halfway mark, which is what the buttons above report.</p>
             </div>
 
             <div class="vc-block vc-block-wide">
               <span class="vc-label" id="subsystemLabel">Focus subsystem</span>
+              <!-- No button ships pressed. The renderer selects the limiting
+                   leaf on load, which is not one of these four, so a hardcoded
+                   pressed state would be a lie before the first frame. shell.js
+                   derives every aria-pressed here from FlowScene.onVehicleChange. -->
               <div class="subsystem-picker" role="group" aria-labelledby="subsystemLabel">
-                <button type="button" data-scene-node="VEHICLE" aria-pressed="true"><b>00</b><span>Integrated stack</span></button>
+                <button type="button" data-scene-node="VEHICLE" aria-pressed="false"><b>00</b><span>Integrated stack</span></button>
                 <button type="button" data-scene-node="PROP-MODULE" aria-pressed="false"><b>01</b><span>Propulsion</span></button>
                 <button type="button" data-scene-node="HEAT-SHIELD" aria-pressed="false"><b>02</b><span>Thermal protection</span></button>
                 <button type="button" data-scene-node="AVIONICS" aria-pressed="false"><b>03</b><span>Avionics</span></button>
               </div>
-              <p id="subsystemDetail" class="vc-detail" role="status">Integrated stack — three level-1 assemblies roll up to one vehicle. Select a subsystem to focus its branch of the thread.</p>
+              <p id="subsystemDetail" class="vc-detail" role="status">Reading the renderer's current focus…</p>
             </div>
           </div>
 
-          <p id="sceneHelp" class="scene-help">Click a node, or focus the diagram and use the arrow keys to move between components; press Enter to inspect the selected one.</p>
+          <p id="sceneHelp" class="scene-help">Click a node, or focus the diagram and use the arrow keys to move between components; press Enter to inspect the selected one, or X to separate and restack the assemblies. Every one of those moves is reflected back into the vehicle-view controls above.</p>
 
           <details class="scene-text-alt">
             <summary>Text description of the diagram</summary>
@@ -205,7 +218,7 @@
   </main>
 
   <footer>
-    <p><strong>Independent portfolio demonstration.</strong> Not affiliated with or endorsed by SpaceX. No logos, marks, imagery, CAD, or operational data of any company are used. All quantities, components, costs, suppliers, lead times, and build structures are synthetic and invented for this demo.</p>
+    <p class="footer-disclosure"><strong>Independent portfolio demonstration.</strong> Not affiliated with or endorsed by SpaceX. No logos, marks, imagery, CAD, or operational data of any company are used. All quantities, components, costs, suppliers, lead times, and build structures are synthetic and invented for this demo.</p>
     <p>Built by TJ Jammalamadaka · Python · deterministic BOM propagation · scenario analysis</p>
   </footer>
 
