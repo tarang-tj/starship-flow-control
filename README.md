@@ -28,10 +28,17 @@ python3 -m http.server 8765
 
 Open http://localhost:8765/web/
 
-## Test and regenerate the reference result
+## Verification gate
+
+Install dependencies once with `npm install`, then run the exact repository gate:
 
 ```bash
-python3 -m unittest discover -s tests -v
+npm run gate
+```
+
+The gate runs ESLint, the deterministic Python model tests, browser-contract tests, and asset verification. To regenerate the checked reference result separately:
+
+```bash
 python3 engine.py data/baseline.json --output web/result.json
 ```
 
@@ -85,13 +92,20 @@ data/baseline.json
               └── web/index.html + styles.css
 ```
 
+## 3D digital thread
+
+The optional 3D scene is a digital-thread navigation aid, not a second source of truth. A selected node links the visible vehicle/assembly/component to the same deterministic BOM result shown in the constraint queue, critical path, and order board. If the scene module or canvas is unavailable, the operating view still runs; future selected-node detail regions receive concise synthetic fixture text when present.
+
+Rendering has an explicit performance boundary: scenario arithmetic and the accessible DOM remain primary. Slider previews are coalesced to one animation-frame update, while the optional scene receives an on-demand render/update only after a scenario state is evaluated. There is no perpetual render loop required by the decision workflow.
+
 ## 60-second demo
 
-1. Baseline: 4 target builds, 3 ready. Thermal tiles arrive after the 21-day horizon.
-2. Move tile arrival from day 34 to day 9 and run: the target clears.
-3. Reduce engine inventory to 22 and run: the limiting path switches to propulsion.
-4. Open Method: explain assumptions, deterministic arithmetic, and what is intentionally not modeled.
+1. **Frame the decision (0–10s):** four builds are due inside 21 days; ask which material condition limits release. All inputs are synthetic.
+2. **Read baseline (10–22s):** day 34 / 25 engines yields 3 ready versus 4 target. Trace the limiting leaf through the digital thread and state the operator recommendation.
+3. **Recover (22–37s):** move tile arrival to day 9 while holding engines at 25. The live preview reports the explicit before → after delta: readiness rises and the gap clears. The frozen baseline remains the comparison anchor.
+4. **Switch the constraint (37–50s):** hold day 9 and reduce engines to 22. The limiting path moves to propulsion, showing why solving one shortage can expose the next constraint.
+5. **Close on verification (50–60s):** open Method, distinguish a prioritization score from a probability, name the model omissions, and cite `npm run gate` as the reproducible contract.
 
-## Responsible use
+## Responsible use and interview boundary
 
-Flow Control is an educational decision-support prototype. Treat its outputs as demonstrations of transparent planning logic, not as production, aerospace, or safety-critical guidance.
+Flow Control is an educational decision-support prototype and rehearsal artifact. Treat its outputs as demonstrations of transparent planning logic, not as production, aerospace, or safety-critical guidance. Use it to prepare and rehearse beforehand; it must be closed during any prohibited interview or assessment where AI, outside tools, or portfolio aids are not allowed.
