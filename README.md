@@ -1,5 +1,7 @@
 # Flow Control
 
+[![gate](https://github.com/tarang-tj/starship-flow-control/actions/workflows/gate.yml/badge.svg)](https://github.com/tarang-tj/starship-flow-control/actions/workflows/gate.yml)
+
 A deterministic, multi-level bill-of-materials constraint radar built as an independent supply-chain operations demonstration.
 
 **Live demo:** https://tarang-tj.github.io/starship-flow-control/
@@ -24,7 +26,8 @@ A planning dashboard that only lists late purchase orders misses the important q
 ## Run
 
 ```bash
-cd ~/dev/starship-flow-control
+git clone https://github.com/tarang-tj/starship-flow-control.git
+cd starship-flow-control
 python3 -m http.server 8765
 ```
 
@@ -215,6 +218,6 @@ Nodes that are not on the limiting path say so and name the chain that is bindin
 
 **Close on verification (52–60s).** Open Method: a prioritization score is not a probability, the omissions are listed on purpose, and `npm run gate` is the reproducible contract that includes a real browser boot of this page.
 
-## Responsible use and interview boundary
+## Responsible use
 
-Flow Control is an educational decision-support prototype and rehearsal artifact. Treat its outputs as demonstrations of transparent planning logic, not as production, aerospace, or safety-critical guidance. Use it to prepare and rehearse beforehand; it must be closed during any prohibited interview or assessment where AI, outside tools, or portfolio aids are not allowed.
+Flow Control is an educational decision-support prototype. Treat its outputs as demonstrations of transparent planning logic, not as production, aerospace, or safety-critical guidance. It must be closed during any prohibited interview or assessment where AI, outside tools, or portfolio aids are not allowed.
