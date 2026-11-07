@@ -1,10 +1,22 @@
 # Flow Control
 
+<!-- Hero card: rendered by tarang-tj/tarang-tj (node scripts/render-repo-hero.mjs starship docs/img), same number as the profile tile. -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/hero-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/img/hero-light.svg">
+  <img src="docs/img/hero-dark.svg" width="100%" alt="Flow Control: 3 to 4 ready builds once the gating part clears">
+</picture>
+
 [![gate](https://github.com/tarang-tj/starship-flow-control/actions/workflows/gate.yml/badge.svg)](https://github.com/tarang-tj/starship-flow-control/actions/workflows/gate.yml)
+[![live demo](https://img.shields.io/badge/live-demo-e8572a)](https://tarang-tj.github.io/starship-flow-control/)
+[![license](https://img.shields.io/github/license/tarang-tj/starship-flow-control)](LICENSE)
+[![data](https://img.shields.io/badge/data-synthetic-555)](#ip-and-model-boundaries)
 
-A deterministic, multi-level bill-of-materials constraint radar built as an independent supply-chain operations demonstration.
+**Which late part actually stops the build?** Flow Control pushes on-hand inventory and inbound orders up a multi-level bill of materials and names the one leaf component that limits the integrated plan. In the baseline, 3 of 4 builds are ready. Pull the gating part in and it's 4.
 
-**Live demo:** https://tarang-tj.github.io/starship-flow-control/
+[![Flow Control live demo: 3 of 4 builds ready, blocked by thermal protection tile timing](docs/img/demo.png)](https://tarang-tj.github.io/starship-flow-control/)
+
+**[Try the live demo](https://tarang-tj.github.io/starship-flow-control/)** · [What it does](#what-it-does) · [Run it](#run) · [Verification gate](#verification-gate)
 
 > All quantities, component names, costs, lead times, purchase orders, and build structures in this repository are synthetic. This project is not affiliated with or endorsed by SpaceX and does not represent SpaceX operations.
 
