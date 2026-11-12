@@ -14,7 +14,7 @@
 
 **Which late part actually stops the build?** Flow Control pushes on-hand inventory and inbound orders up a multi-level bill of materials and names the one leaf component that limits the integrated plan. In the baseline, 3 of 4 builds are ready. Pull the gating part in and it's 4.
 
-[![Flow Control live demo: 3 of 4 builds ready, blocked by thermal protection tile timing](docs/img/demo.png)](https://tarang-tj.github.io/starship-flow-control/)
+[![Flow Control live demo: drag the thermal tile arrival from day 34 to day 12 and 3 of 4 builds becomes 4 of 4; the switch preset makes engine assemblies the limit](docs/img/scenario-lab.gif)](https://tarang-tj.github.io/starship-flow-control/)
 
 **[Try the live demo](https://tarang-tj.github.io/starship-flow-control/)** · [What it does](#what-it-does) · [Run it](#run) · [Verification gate](#verification-gate)
 
