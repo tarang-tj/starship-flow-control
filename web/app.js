@@ -456,6 +456,18 @@ function renderSelectedNode(node) {
   lines(selectedNodeDetail, evidenceLines(ev, currentResult), "evidence-line");
 }
 
+// The first screen states the live answer, so it moves with every scenario.
+function renderHeadline(result) {
+  const { ready, target, gap } = result.summary;
+  const parts = result.constraints.length;
+  const who = parts === 1 ? "One part" : `${parts} parts`;
+  setText($("heroReady"), `${ready} of ${target} builds ready.`);
+  setText($("heroLimit"), gap === 0 ? "Every build clears."
+    : `${who} block${parts === 1 ? "s" : ""} ${gap === 1 ? `#${target}` : gap}.`);
+  setText($("heroWhy"), gap === 0 ? `Every leaf part arrives inside the ${result.horizon}-day window.`
+    : `The limit is ${lower(leafName(result))} timing.`);
+}
+
 function render(result, inputs) {
   currentResult = result;
   const changed = inputs.day !== PRESETS.baseline.day || inputs.engines !== PRESETS.baseline.engines;
@@ -470,6 +482,7 @@ function render(result, inputs) {
     ? `${result.summary.gap} build blocked by ${lower(leafName(result))} timing`
     : "Target is feasible inside the horizon");
   setText($("pathBadge"), `${result.root.path.length} LEVELS`);
+  renderHeadline(result);
   renderConstraints(result);
   renderPath(result);
   renderOrders(result);

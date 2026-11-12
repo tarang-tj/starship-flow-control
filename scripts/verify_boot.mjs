@@ -102,10 +102,23 @@ try {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}/web/`, { waitUntil: "networkidle" });
     await page.waitForFunction(() => document.querySelector("#readyBuilds")?.textContent === "3");
+    // The headline states the live answer and must agree with the readout under it.
+    const headline = async () => [await page.locator("#heroReady").textContent(), await page.locator("#heroLimit").textContent(),
+      await page.locator("#heroWhy").textContent(), await page.locator("#readyBuilds").textContent()];
+    let [ready, limit, why, n] = await headline();
+    assert.equal(ready, `${n} of 4 builds ready.`);
+    assert.equal(limit, "One part blocks #4.");
+    assert.match(why, /thermal protection/i);
     await page.locator('[data-preset="recover"]').click();
     assert.equal(await page.locator("#readyBuilds").textContent(), "4");
+    [ready, limit, why] = await headline();
+    assert.equal(ready, "4 of 4 builds ready.");
+    assert.equal(limit, "Every build clears.");
     await page.locator('[data-preset="switch"]').click();
     assert.match(await page.locator("#criticalPath").textContent(), /engine/i);
+    [ready, limit, why, n] = await headline();
+    assert.equal(ready, `${n} of 4 builds ready.`);
+    assert.match(why, /engine/i);
 
     // Integration ground truth. Every assertion below reads state the RENDERER
     // owns, or the pixels it produced: a seam that reports its own arguments
